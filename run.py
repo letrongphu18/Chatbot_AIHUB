@@ -2,7 +2,7 @@
 import os
 import sys
 from fastapi import FastAPI, Request, HTTPException
-from backend.core.config_loader import load_config
+from backend.configs.config_loader import load_config
 from backend.core.fb_helper import FacebookClient
 from backend.core.schemas import LeadData # Import khuôn dữ liệu
 from backend.api.webhook_routes import router as webhook_router

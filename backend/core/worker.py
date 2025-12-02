@@ -10,7 +10,7 @@ import json
 import time
 from dotenv import load_dotenv
 
-from backend.core.config_loader import load_config
+from backend.configs.config_loader import load_config
 from backend.core.ai_engine import generate_ai_response
 from backend.core.flow_engine import FlowEngine
 from backend.core.fb_helper import FacebookClient

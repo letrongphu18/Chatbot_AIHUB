@@ -1,9 +1,10 @@
-# app/config_loader.py
+# backend/configs/config_loader.py
 import json
 import os
 
 
-CONFIG_DIR = os.path.join(os.getcwd(), "configs")
+#CONFIG_DIR = os.path.join(os.getcwd(), "configs")
+CONFIG_DIR = os.path.join(os.path.dirname(__file__), "") 
 
 # chỗ này là ID của mấy page và file config tương ứng
 PAGE_MAP = {
