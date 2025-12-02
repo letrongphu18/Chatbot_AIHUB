@@ -1,7 +1,7 @@
 
 import re
 import json
-from app.schemas import LeadData
+from backend.core.schemas import LeadData
 
 class FlowEngine:
     def __init__(self, redis_client):

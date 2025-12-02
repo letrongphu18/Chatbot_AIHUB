@@ -10,11 +10,11 @@ import json
 import time
 from dotenv import load_dotenv
 
-from app.config_loader import load_config
-from app.ai_engine import generate_ai_response
-from app.flow_engine import FlowEngine
-from app.fb_helper import FacebookClient
-from app.crm_connector import CRMConnector
+from backend.core.config_loader import load_config
+from backend.core.ai_engine import generate_ai_response
+from backend.core.flow_engine import FlowEngine
+from backend.core.fb_helper import FacebookClient
+from backend.core.crm_connector import CRMConnector
 
 
 load_dotenv()
