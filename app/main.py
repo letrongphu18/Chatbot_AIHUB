@@ -6,11 +6,15 @@ from app.config_loader import load_config
 from app.fb_helper import FacebookClient
 from app.schemas import LeadData # Import khuôn dữ liệu
 
+from dotenv import load_dotenv
+load_dotenv() 
+
 
 app = FastAPI()
 
 
-VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "1234567890")
+#VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "1234567890")
+VERIFY_TOKEN = os.getenv("FB_VERIFY_TOKEN", "1234567890")
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 
