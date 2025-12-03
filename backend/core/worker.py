@@ -1,13 +1,12 @@
-
 import os
 import sys
 import datetime
+import time # <<< BẮT BUỘC: time được sử dụng cho tính thời gian timeout
 
 sys.path.append(os.getcwd())
 
 import redis
 import json
-import time
 from dotenv import load_dotenv
 
 from backend.configs.config_loader import load_config
@@ -15,6 +14,8 @@ from backend.core.ai_engine import generate_ai_response
 from backend.core.flow_engine import FlowEngine
 from backend.core.fb_helper import FacebookClient
 from backend.core.crm_connector import CRMConnector
+
+HANDOFF_TIMEOUT_SECONDS = 600
 
 
 load_dotenv()
@@ -25,7 +26,6 @@ flow_engine = FlowEngine(redis_client)
 from backend.database.load_pages_config import load_all_fb_tokens
 fb_tokens = load_all_fb_tokens("backend/configs")  # Trả về dict {page_id: FB_PAGE_ACCESS_TOKEN}
 fb_client = FacebookClient(page_tokens=fb_tokens)
-#fb_client = FacebookClient()
 crm = CRMConnector()
 
 print(" WORKER ĐANG CHẠY... ")
@@ -53,6 +53,7 @@ def save_chat_history(sender_id, role, content):
 def get_session(sender_id):
     """
     Lấy toàn bộ Context của khách hàng từ Redis
+    ĐÃ CẬP NHẬT để lấy các trường Handoff
     """
     key = f"session:{sender_id}"
     data = redis_client.hgetall(key)
@@ -68,13 +69,22 @@ def get_session(sender_id):
             session["data"] = {}
     else:
         session["data"] = {}
+
+    # <<< XỬ LÝ TRƯỜNG HANDOFF >>>
+    session["conversation_mode"] = session.get("conversation_mode", "BOT")
+    try:
+        # last_human_activity phải là float (timestamp)
+        session["last_human_activity"] = float(session.get("last_human_activity", 0))
+    except:
+        session["last_human_activity"] = 0
+    # <<< KẾT THÚC XỬ LÝ TRƯỜNG HANDOFF >>>
         
     return session
 
-def update_session(sender_id, page_id, topic, state, new_data=None):
+def update_session(sender_id, page_id, topic, state, new_data=None, 
+                   conversation_mode=None, last_human_activity=None): # <<< THÊM THAM SỐ HANDOFF
     """
-    Lưu Session chuẩn Schema:
-    - user_id, page_id, topic, state, data (JSON), updated_at
+    Lưu Session chuẩn Schema
     """
     key = f"session:{sender_id}"
     
@@ -96,9 +106,19 @@ def update_session(sender_id, page_id, topic, state, new_data=None):
         "updated_at": datetime.datetime.now().isoformat()
     }
 
+    # <<< THÊM CÁC TRƯỜNG HANDOFF VÀO PAYLOAD >>>
+    if conversation_mode:
+        update_payload["conversation_mode"] = conversation_mode
+    if last_human_activity is not None:
+        update_payload["last_human_activity"] = str(last_human_activity) # Lưu dưới dạng string
+    # <<< KẾT THÚC THÊM CÁC TRƯỜNG HANDOFF >>>
+
     # 4. Lưu vào Redis
     redis_client.hset(key, mapping=update_payload)
     redis_client.expire(key, 86400 * 3) # 
+
+
+    
 
 def process_message():
     while True:
@@ -125,59 +145,100 @@ def process_message():
                         print("❌ Không tìm thấy Config")
                         continue
                     
-           
                     page_name = config.get("page_name")
                     if not page_name:
                         page_name = config.get("meta_data", {}).get("brand_default", "Unknown")
                     config["page_name"] = page_name
                     topic_id = config.get("topic_id", "general")
 
-                    
+                    # 2. LOAD SESSION & HISTORY
                     history = get_chat_history(sender_id)
                     current_history = history + [{"role": "user", "content": message_text}]
 
-             
                     session_obj = get_session(sender_id)
+                    
+                    # Lấy trạng thái Handoff
+                    mode = session_obj.get("conversation_mode", "BOT")
+                    last_human_activity = session_obj.get("last_human_activity", 0)
+                    current_time = time.time()
+                    
                     current_state = session_obj.get("state", "START")
-                    session_data_json = session_obj.get("data", {}) # Đây là cái cục {cig_per_day: 10...}
+                    session_data_json = session_obj.get("data", {}) 
 
-             
-                    ai_json = generate_ai_response(current_history, config, json.dumps(session_data_json))
-                    
-            
-                    final_result = flow_engine.process_ai_result(sender_id, message_text, ai_json, config)
-                    reply_text = final_result["text_to_send"]
-                    lead_data = final_result["lead_data"]
+                #   human  logic
+                    if message_text.upper().startswith("!TAKEOVER"):
+                        mode = "HUMAN"
+                        print(f"[{sender_id}] *** ADMIN đã tiếp quản hội thoại ***")
+                        
+                        
+                        update_session(sender_id, page_id, topic_id, current_state, new_data=None, 
+                                    conversation_mode=mode, last_human_activity=current_time)
+                        fb_client.send_text_message(sender_id, "Bot đã chuyển sang chế độ hỗ trợ của Admin. Vui lòng đợi phản hồi.", page_id=page_id)
+                        continue 
 
-               
-                    next_state = ai_json.get("next_state") or current_state
                     
-               
-                    new_data_points = {}
-                    if lead_data.get("classification"):
-                        new_data_points["classification"] = lead_data.get("classification")
-                    if lead_data.get("subtopic"):
-                        new_data_points["subtopic"] = lead_data.get("subtopic")
+                    if mode == "HUMAN":
+                        
+                        if current_time - last_human_activity > HANDOFF_TIMEOUT_SECONDS:
+                            print(f"[{sender_id}] Admin timeout. Chuyển quyền xử lý về BOT.")
+                            mode = "BOT" # Reset mode
+                            
+                            fb_client.send_text_message(sender_id, "Admin đang bận. Bot sẽ tiếp tục hỗ trợ bạn.", page_id=page_id)
+                            
+                        else:
+                            
+                            print(f"[{sender_id}] Đang ở chế độ HUMAN. Bot tạm dừng.")
+                            
+                            update_session(sender_id, page_id, topic_id, current_state, new_data=None, 
+                                        conversation_mode=mode, last_human_activity=current_time)
+                            continue 
+
                    
+                    update_session(sender_id, page_id, topic_id, current_state, new_data=None, 
+                                conversation_mode=mode, last_human_activity=current_time)
+                  
+                    if mode == "BOT":
+                        
+                     
+                        ai_json = generate_ai_response(current_history, config, json.dumps(session_data_json))
+                        
+                        
+                        final_result = flow_engine.process_ai_result(sender_id, message_text, ai_json, config)
+                        reply_text = final_result["text_to_send"]
+                        lead_data = final_result["lead_data"]
+
+                   
+                        next_state = ai_json.get("next_state") or current_state
+                        
+                        new_data_points = {}
+                        if lead_data.get("classification"):
+                            new_data_points["classification"] = lead_data.get("classification")
+                        if lead_data.get("subtopic"):
+                            new_data_points["subtopic"] = lead_data.get("subtopic")
+                        
+                        
+                        update_session(
+                            sender_id=sender_id,
+                            page_id=page_id,
+                            topic=topic_id,
+                            state=next_state,
+                            new_data=new_data_points,
+                            conversation_mode=mode,
+                            last_human_activity=current_time
+                        )
+
+                   
+                        print(f" Trả lời: {list(fb_tokens.keys())}...")
+                        fb_client.send_text_message(sender_id, reply_text, page_id=page_id)
+                        save_chat_history(sender_id, "user", message_text)
+                        save_chat_history(sender_id, "model", reply_text)
+
+                        # 7. Push CRM (Nếu đủ điều kiện)
+                        if final_result["action"] == "PUSH_CRM":
+                            print(f" DATA LEAD -> CRM...")
+                            crm.push_lead(lead_data)
                     
-                    update_session(
-                        sender_id=sender_id,
-                        page_id=page_id,
-                        topic=topic_id,
-                        state=next_state,
-                        new_data=new_data_points
-                    )
-
-                    # Gửi tin & Lưu lịch sử chat
-                    print(f" 🤖 Trả lời: {list(fb_tokens.keys())}...")
-                    fb_client.send_text_message(sender_id, reply_text, page_id=page_id)
-                    save_chat_history(sender_id, "user", message_text)
-                    save_chat_history(sender_id, "model", reply_text)
-
-                    # 7. Push CRM (Nếu đủ điều kiện)
-                    if final_result["action"] == "PUSH_CRM":
-                        print(f" DATA LEAD -> CRM...")
-                        crm.push_lead(lead_data)
+                   
 
         except Exception as e:
             print(f" Worker Lỗi: {e}")

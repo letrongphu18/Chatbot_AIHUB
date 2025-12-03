@@ -3,6 +3,7 @@ import re
 import json
 from backend.core.schemas import LeadData
 
+
 class FlowEngine:
     def __init__(self, redis_client):
         self.redis = redis_client
@@ -156,4 +157,10 @@ class FlowEngine:
         """Tìm Email (An toàn tuyệt đối)"""
         if not text: return None
         match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text)
-        return
+        return match.group(0) if match else None
+    
+
+    
+
+
+    
