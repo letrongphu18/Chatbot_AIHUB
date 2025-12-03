@@ -8,6 +8,7 @@ from backend.core.schemas import LeadData # Import khuôn dữ liệu
 from backend.api.webhook_routes import router as webhook_router
 from dotenv import load_dotenv
 load_dotenv() 
+from backend.core.redis_client import r
 
 
 app = FastAPI()
@@ -33,6 +34,7 @@ def home():
 # ---------------------
 import time
 import subprocess
+
 def run_process(command):
     """Chạy 1 command hệ thống song song"""
     proc = subprocess.Popen(command, shell=True)

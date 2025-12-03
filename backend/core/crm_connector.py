@@ -3,15 +3,16 @@ import requests
 import json
 import os
 import redis
+from backend.core.redis_client import r
 
 # Cấu hình Charm.Contact (Sau này thay bằng URL thật giờ tui làm mock thôi)
 CHARM_API_URL = os.getenv("CHARM_API_URL", "http://127.0.0.1:8000/mock-crm/leads")
 CHARM_API_KEY = os.getenv("CHARM_API_KEY", "mock-key")
 
 class CRMConnector:
-    def __init__(self):
-        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-        self.redis = redis.from_url(redis_url)
+    # def __init__(self):
+    #     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    #     self.redis = redis.from_url(redis_url)
 
     def push_lead(self, lead_data: dict):
         """

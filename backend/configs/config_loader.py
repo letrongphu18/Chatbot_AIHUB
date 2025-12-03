@@ -9,7 +9,8 @@ CONFIG_DIR = os.path.join(os.path.dirname(__file__), "")
 # chỗ này là ID của mấy page và file config tương ứng
 PAGE_MAP = {
     "105524314620167": "bo_thuoc_360.json",
-    "2002": "bds_luxury.json"
+    "2002": "bds_luxury.json",
+    "926413217213621": "bo_thuoc_360.json",
 }
 
 def load_config(page_id):

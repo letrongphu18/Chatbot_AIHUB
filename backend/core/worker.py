@@ -22,11 +22,13 @@ redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 redis_client = redis.from_url(redis_url)
 
 flow_engine = FlowEngine(redis_client)
-fb_client = FacebookClient()
+from backend.database.load_pages_config import load_all_fb_tokens
+fb_tokens = load_all_fb_tokens("backend/configs")  # Trả về dict {page_id: FB_PAGE_ACCESS_TOKEN}
+fb_client = FacebookClient(page_tokens=fb_tokens)
+#fb_client = FacebookClient()
 crm = CRMConnector()
 
 print(" WORKER ĐANG CHẠY... ")
-
 
 
 def get_chat_history(sender_id):
@@ -167,7 +169,8 @@ def process_message():
                     )
 
                     # Gửi tin & Lưu lịch sử chat
-                    fb_client.send_text_message(sender_id, reply_text)
+                    print(f" 🤖 Trả lời: {list(fb_tokens.keys())}...")
+                    fb_client.send_text_message(sender_id, reply_text, page_id=page_id)
                     save_chat_history(sender_id, "user", message_text)
                     save_chat_history(sender_id, "model", reply_text)
 

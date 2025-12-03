@@ -4,22 +4,40 @@ import requests
 import json
 
 class FacebookClient:
-    def __init__(self):
+    #def __init__(self):
+    def __init__(self, page_tokens: dict = None):
         # Lấy Token từ file .env
-        self.page_access_token = os.getenv("FB_PAGE_ACCESS_TOKEN")
+        if page_tokens:
+            self.page_tokens  = page_tokens
+        else:
+            #env_tokens = os.getenv("FB_PAGE_ACCESS_TOKEN", "{}")
+            self.page_tokens = {}
+            # try:
+            #     self.page_tokens  = json.loads(env_tokens)
+            # except json.JSONDecodeError:
+            #     self.page_tokens  = {}
+        #self.page_access_token = os.getenv("FB_PAGE_ACCESS_TOKEN")
         self.api_url = "https://graph.facebook.com/v18.0/me/messages"
 
-    def send_text_message(self, recipient_id, text):
+    def send_text_message(self, recipient_id, text, page_id=None):
         """
         Gửi tin nhắn văn bản trả lời khách hàng
         """
-        if not self.page_access_token:
-            print(" Chưa cấu hình FB_PAGE_ACCESS_TOKEN trong .env")
+        if not self.page_tokens:
+            print(" Không có token Facebook nào, kiểm tra JSON config")
             return
+         # lấy token tương ứng
+        if page_id:
+            token = self.page_tokens.get(page_id)
+            if not token:
+                print(f" Không tìm thấy token cho page_id={page_id}")
+                return
+        else:
+            token = next(iter(self.page_tokens.values()))  # token đầu tiên
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.page_access_token}"
+            "Authorization": f"Bearer {token }"
         }
         
         payload = {

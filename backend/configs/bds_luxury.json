@@ -7,5 +7,10 @@
 
   "flow_rules": {
     "welcome_message": "Hồng Phúc Luxury xin chào Quý khách. Em có thể hỗ trợ thông tin dự án hoặc bảng hàng mới nhất cho mình không ạ?"
+  },
+  "facebook_settings": {
+    "FB_PAGE_ACCESS_TOKEN": "EAAP....",
+    "FB_VERIFY_TOKEN": "1234567890",
+    "FB_PAGEID": ""
   }
 }
