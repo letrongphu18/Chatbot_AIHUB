@@ -6,6 +6,7 @@ from backend.configs.config_loader import load_config
 from backend.core.fb_helper import FacebookClient
 from backend.core.schemas import LeadData # Import khuôn dữ liệu
 from backend.api.webhook_routes import router as webhook_router
+from backend.api.conversation_routes import router as conversation_router
 from dotenv import load_dotenv
 load_dotenv() 
 from backend.core.redis_client import r
@@ -15,6 +16,7 @@ app = FastAPI()
 
 # Gắn router
 app.include_router(webhook_router)
+app.include_router(conversation_router)
 
 # VERIFY_TOKEN = os.getenv("FB_VERIFY_TOKEN", "1234567890")
 # redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
