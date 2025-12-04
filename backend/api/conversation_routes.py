@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Query
 import requests
 from datetime import datetime
-
+from fastapi import Depends
+from backend.auth.api_key_auth import check_api_key
 from backend.database.load_pages_config import load_all_fb_tokens
 
 router = APIRouter()
 
 
-@router.get("/api/conversations")
+@router.get("/api/conversations", dependencies=[Depends(check_api_key)])
 def get_conversations():
     PAGE_TOKENS = load_all_fb_tokens("backend/configs")
     limit = 100  # tăng limit để giảm số lần gọi API
@@ -83,7 +84,7 @@ def get_conversations():
         "page_ids": list(PAGE_TOKENS.keys())
     }
 
-@router.get("/api/conversations/{conversation_id}")
+@router.get("/api/conversations/{conversation_id}", dependencies=[Depends(check_api_key)])
 def get_conversation_details(
     conversation_id: str,
     page_id: str = Query(..., description="ID fanpage để lấy access_token")
