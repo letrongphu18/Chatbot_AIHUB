@@ -3,14 +3,23 @@ import requests
 from datetime import datetime
 from fastapi import Depends
 from backend.auth.api_key_auth import check_api_key
-from backend.database.load_pages_config import load_all_fb_tokens
-
+from backend.database.crud import load_all_fb_tokens
+from backend.database import crud
+from backend.database.session import SessionLocal
 router = APIRouter()
 
-
+# Dependency để lấy DB session
+def get_db_instance():
+    db = SessionLocal()
+    try:
+        return db
+    finally:
+        pass  
 @router.get("/api/conversations", dependencies=[Depends(check_api_key)])
 def get_conversations():
-    PAGE_TOKENS = load_all_fb_tokens("backend/configs")
+    #PAGE_TOKENS = load_all_fb_tokens("backend/configs")
+    db = get_db_instance()
+    PAGE_TOKENS = crud.load_all_fb_tokens(db)
     limit = 100  # tăng limit để giảm số lần gọi API
 
     conversations_map = {}
@@ -87,9 +96,11 @@ def get_conversations():
 @router.get("/api/conversations/{conversation_id}", dependencies=[Depends(check_api_key)])
 def get_conversation_details(
     conversation_id: str,
-    page_id: str = Query(..., description="ID fanpage để lấy access_token")
+    page_id: str = Query(..., description="ID fanpage để lấy access_token"),
 ):
-    PAGE_TOKENS = load_all_fb_tokens("backend/configs")
+    #PAGE_TOKENS = load_all_fb_tokens("backend/configs")
+    db = get_db_instance()
+    PAGE_TOKENS = crud.load_all_fb_tokens(db)
     ACCESS_TOKEN = PAGE_TOKENS.get(page_id)
 
     if not ACCESS_TOKEN:

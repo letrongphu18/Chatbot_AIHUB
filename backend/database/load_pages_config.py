@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from dataclasses import dataclass
 from typing import List, Dict
-
+from typing import Optional
 # -----------------------------
 # 1. Dataclass model
 # -----------------------------
@@ -90,6 +90,14 @@ def load_all_fb_tokens(folder_path: str) -> dict:
         except:
             continue
     return tokens
+
+
+def get_page_config_by_id(folder_path: str, page_id: str) -> Optional[PageConfig]:
+    page_configs = load_all_page_configs(folder_path)
+    for config in page_configs:
+        if config.facebook_settings.FB_PAGEID == page_id:
+            return config
+    return None
 
 # -----------------------------
 # 4. Ví dụ sử dụng
