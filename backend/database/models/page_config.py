@@ -5,21 +5,24 @@ import json
 class PageConfig(Base):
     __tablename__ = "page_configs"
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    fb_pageid = Column(String(255), unique=True, index=True, nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    fb_pageid = Column(String(255), unique=True, nullable=False)
 
-    topic_id = Column(String(255))
-    config_version = Column(String(50))
+    topic_id = Column(String(255), nullable=False)
+    config_version = Column(String(50), nullable=False)
 
-    meta_data = Column(Text)
-    content_strategy = Column(Text)
-    logic_rules = Column(Text)
-    system_settings = Column(Text)
-    facebook_settings = Column(Text)
+    meta_data = Column(Text, nullable=False)
+    content_strategy = Column(Text, nullable=False)
+    logic_rules = Column(Text, nullable=False)
+    system_settings = Column(Text, nullable=False)
+    facebook_settings = Column(Text, nullable=False)
 
     def to_dict(self):
+        """
+        TRẢ VỀ ĐÚNG CẤU TRÚC JSON CŨ – để worker không crash.
+        fb_pageid KHÔNG đưa vào vì JSON gốc không có.
+        """
         return {
-            "fb_pageid": self.fb_pageid,
             "topic_id": self.topic_id,
             "config_version": self.config_version,
             "meta_data": json.loads(self.meta_data),
@@ -28,7 +31,6 @@ class PageConfig(Base):
             "system_settings": json.loads(self.system_settings),
             "facebook_settings": json.loads(self.facebook_settings),
         }
-
 
 # from sqlalchemy import Column, String, Text
 # from backend.database.session import Base

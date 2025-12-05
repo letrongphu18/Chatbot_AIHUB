@@ -1,7 +1,10 @@
 import os
 import sys
 import datetime
-import time # <<< BẮT BUỘC: time được sử dụng cho tính thời gian timeout
+import time
+sys.path.insert(0, os.path.abspath("."))
+
+from backend.database.session import SessionLocal 
 
 sys.path.append(os.getcwd())
 
@@ -14,7 +17,8 @@ from backend.core.ai_engine import generate_ai_response
 from backend.core.flow_engine import FlowEngine
 from backend.core.fb_helper import FacebookClient
 from backend.core.crm_connector import CRMConnector
-
+from backend.database.crud import load_all_fb_tokens
+from backend.database import crud
 HANDOFF_TIMEOUT_SECONDS = 600
 
 
@@ -23,12 +27,20 @@ redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 redis_client = redis.from_url(redis_url)
 
 flow_engine = FlowEngine(redis_client)
-from backend.database.load_pages_config import load_all_fb_tokens
-fb_tokens = load_all_fb_tokens("backend/configs")  # Trả về dict {page_id: FB_PAGE_ACCESS_TOKEN}
+def get_db_instance():
+    db = SessionLocal()
+    try:
+        return db
+    finally:
+        pass  
+db = get_db_instance()
+fb_tokens = crud.load_all_fb_tokens(db)  # Trả về dict {page_id: FB_PAGE_ACCESS_TOKEN}
 fb_client = FacebookClient(page_tokens=fb_tokens)
 crm = CRMConnector()
 
 print(" WORKER ĐANG CHẠY... ")
+
+
 
 
 def get_chat_history(sender_id):
@@ -140,7 +152,8 @@ def process_message():
                     print(f"\n📨 User {sender_id}: {message_text}")
 
                     # 1. Load Config (Topic Pack)
-                    config = load_config(page_id)
+                    #config = load_config(page_id)
+                    config = crud.get_config_by_id(db, page_id)
                     if not config:
                         print("❌ Không tìm thấy Config")
                         continue

@@ -1,6 +1,6 @@
 # backend/api/webhook_routes.py
 import json
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Response
 from backend.core.schemas import LeadData
 import redis
 import os
@@ -31,9 +31,16 @@ def verify_webhook(request: Request):
 
 @router.post("/webhook")
 async def handle_webhook(request: Request):
-    body = await request.json()
-    r.rpush("chat_queue", json.dumps(body))
-    return {"message": "Event received"}
+    # body = await request.json()
+    # r.rpush("chat_queue", json.dumps(body))
+    # return {"message": "Event received"}
+    try:
+        body = await request.json()
+        r.rpush("chat_queue", json.dumps(body))
+    except Exception as e:
+        print("❌ Webhook error:", e)
+    # Facebook chỉ cần 200 OK
+    return Response(status_code=200)
 
 @router.post("/mock-crm/leads")
 async def receive_lead_from_bot(lead: LeadData):
