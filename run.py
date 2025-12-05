@@ -49,7 +49,7 @@ def start_all_services():
     print("🚀 Bắt đầu khởi chạy tất cả dịch vụ...")
 
     # 1. Uvicorn
-    uvicorn_cmd = "uvicorn run:app --host 127.0.0.1 --port 8000"
+    uvicorn_cmd = "uvicorn run:app --host 127.0.0.1 --port {}".format(os.getenv("PORT", "8000"))
     uvicorn_proc = subprocess.Popen(uvicorn_cmd, shell=True)
 
     time.sleep(3)
@@ -59,7 +59,7 @@ def start_all_services():
 
     time.sleep(1)
     # 3. Ngrok
-    ngrok_cmd = "ngrok http 8000"
+    ngrok_cmd = "ngrok http {}".format(os.getenv("PORT", "8000"))
     ngrok_proc = run_process(ngrok_cmd)
 
     try:
