@@ -32,10 +32,5 @@
   "system_settings": {
     "call_me": "Bác sĩ",
     "call_user": ""
-  },
-  "facebook_settings": {
-    "FB_PAGE_ACCESS_TOKEN": "EAAP....",
-    "FB_VERIFY_TOKEN": "1234567890",
-    "FB_PAGEID": ""
   }
 }

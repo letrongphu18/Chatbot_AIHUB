@@ -17,11 +17,9 @@ from backend.core.ai_engine import generate_ai_response
 from backend.core.flow_engine import FlowEngine
 from backend.core.fb_helper import FacebookClient
 from backend.core.crm_connector import CRMConnector
-from backend.database.crud import load_all_fb_tokens
+from backend.database.load_pages_config import get_page_config_by_id, load_all_fb_tokens
 from backend.database import crud
 HANDOFF_TIMEOUT_SECONDS = 600
-
-
 load_dotenv()
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 redis_client = redis.from_url(redis_url)
@@ -32,10 +30,13 @@ def get_db_instance():
     try:
         return db
     finally:
-        pass  
+        pass 
 db = get_db_instance()
 fb_tokens = crud.load_all_fb_tokens(db)  # Trả về dict {page_id: FB_PAGE_ACCESS_TOKEN}
+#fb_tokens = load_all_fb_tokens("backend/configs/")  # Trả về dict {page_id: FB_PAGE_ACCESS_TOKEN}
 fb_client = FacebookClient(page_tokens=fb_tokens)
+print(" Facebook Tokens loaded for pages:", list(fb_tokens.keys()))
+#fb_client = FacebookClient()
 crm = CRMConnector()
 
 print(" WORKER ĐANG CHẠY... ")
@@ -133,6 +134,7 @@ def update_session(sender_id, page_id, topic, state, new_data=None,
     
 
 def process_message():
+    print(" Worker is listening to chat_queue...")
     while True:
         try:
             packed_item = redis_client.blpop("chat_queue", timeout=5)
@@ -142,17 +144,17 @@ def process_message():
             body = json.loads(raw_json)
 
             for entry in body.get("entry", []):
+                print("Processing entry:", entry.get("id"))
                 page_id = entry.get("id") 
                 for messaging in entry.get("messaging", []):
                     sender_id = messaging.get("sender", {}).get("id")
                     message_text = messaging.get("message", {}).get("text")
-
+                    print(f"User {sender_id} sent message:", message_text)
                     if not message_text: continue
-
-                    print(f"\n📨 User {sender_id}: {message_text}")
 
                     # 1. Load Config (Topic Pack)
                     #config = load_config(page_id)
+                    #config = get_page_config_by_id("backend/configs",page_id)
                     config = crud.get_config_by_id(db, page_id)
                     if not config:
                         print("❌ Không tìm thấy Config")
@@ -169,7 +171,6 @@ def process_message():
                     current_history = history + [{"role": "user", "content": message_text}]
 
                     session_obj = get_session(sender_id)
-                    
                     # Lấy trạng thái Handoff
                     mode = session_obj.get("conversation_mode", "BOT")
                     last_human_activity = session_obj.get("last_human_activity", 0)
@@ -186,7 +187,13 @@ def process_message():
                         
                         update_session(sender_id, page_id, topic_id, current_state, new_data=None, 
                                     conversation_mode=mode, last_human_activity=current_time)
-                        fb_client.send_text_message(sender_id, "Bot đã chuyển sang chế độ hỗ trợ của Admin. Vui lòng đợi phản hồi.", page_id=page_id)
+                        try:
+                            fb_client.send_text_message(sender_id, "Bot đã chuyển sang chế độ hỗ trợ của Admin. Vui lòng đợi phản hồi.", page_id=page_id)
+                        except Exception as e:
+                            print(f"❌ Lỗi gửi FB: {e}")
+                            continue  # hoặc log, nhưng không crash
+
+                        #fb_client.send_text_message(sender_id, "Bot đã chuyển sang chế độ hỗ trợ của Admin. Vui lòng đợi phản hồi.", page_id=page_id)
                         continue 
 
                     
@@ -214,7 +221,7 @@ def process_message():
                         
                      
                         ai_json = generate_ai_response(current_history, config, json.dumps(session_data_json))
-                        
+                        print("AI response:", ai_json)
                         
                         final_result = flow_engine.process_ai_result(sender_id, message_text, ai_json, config)
                         reply_text = final_result["text_to_send"]
