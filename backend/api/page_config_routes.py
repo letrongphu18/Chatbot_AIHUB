@@ -8,14 +8,14 @@ from backend.schemas.page_config import PageConfigIn
 # from backend.database.crud import get_all_configs, get_config_by_id, add_config, update_config, delete_config, get_platform_credential
 from backend.database import crud
 from backend.schemas.page_schema import PagePayload
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(check_api_key)])
 
 # Dependency để lấy DB session
 
 # -----------------------------
 # Load danh sách tất cả page
 # -----------------------------
-@router.get("/api/pages", dependencies=[Depends(check_api_key)])
+@router.get("/api/pages")
 def get_pages():
     pages = crud.get_all_configs()
     return {"pages": pages}

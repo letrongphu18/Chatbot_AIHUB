@@ -56,13 +56,6 @@ async def page_create(
     config_json: str = Form(...)
 ):
 
-    # Parse JSON từ textarea
-    # try:
-    #     config = json.loads(config_json)
-    # except Exception as e:
-    #     return {"error": "Config JSON không hợp lệ", "detail": str(e)}
-
-    # Gói lại payload y như API cần
     payload = {
         "platform": {
             "platform": platform,
@@ -81,11 +74,10 @@ async def page_create(
 
     # Gửi sang API thật của bạn
     api_url = "http://localhost:8099/api/page"
-
+    headers = {"X-API-KEY": "abc123"}  
+    
     async with httpx.AsyncClient() as client:
-        response = await client.post(api_url, json=payload)
-        print("Status code:", response.status_code)
-        print("Response text:", response.text)
+        response = await client.post(api_url, headers=headers, json=payload)
         try:
             data = response.json()
             return RedirectResponse(url="/pages", status_code=303)
@@ -128,13 +120,6 @@ async def submit_update_page(
     config_json: str = Form(...)
 ):
 
-    # Parse JSON từ textarea
-    # try:
-    #     config = json.loads(config_json)
-    # except Exception as e:
-    #     return {"error": "Config JSON không hợp lệ", "detail": str(e)}
-
-    # Gói lại payload y như API cần
     payload = {
         "platform": {
             "platform": platform,
@@ -155,9 +140,8 @@ async def submit_update_page(
     api_url = f"http://localhost:8099/api/page/{channel_id}"
 
     async with httpx.AsyncClient() as client:
-        response = await client.put(api_url, json=payload)
-        print("Status code:", response.status_code)
-        print("Response text:", response.text)
+        headers = {"X-API-KEY": "abc123"}  
+        response = await client.put(api_url, headers=headers, json=payload)
         try:
             data = response.json()
             return RedirectResponse(url="/pages", status_code=303)
