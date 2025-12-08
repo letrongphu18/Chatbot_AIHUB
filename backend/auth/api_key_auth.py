@@ -6,6 +6,7 @@ load_dotenv()
 VALID_KEYS = os.getenv("VALID_KEYS", "").split(",")
 
 def check_api_key(x_api_key: str = Header(None)):
+    print(f"Received API Key: {VALID_KEYS}")
     if x_api_key not in VALID_KEYS:
         raise HTTPException(
             status_code=403,

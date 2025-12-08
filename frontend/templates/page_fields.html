@@ -1,0 +1,59 @@
+<div class="card p-4 shadow-sm">
+    <div class="mb-3">
+        <label class="form-label">Topic id</label>
+        <input type="text" name="topic_id" value="{{ page_config.topic_id or ''}}" class="form-control"  >
+    </div>
+    <div class="mb-3">
+        <label class="form-label">config version</label>
+        <input type="text" name="config_version" value="{{ page_config.config_version or ''}}" class="form-control"  >
+    </div>
+    <!-- Platform chọn -->
+    <div class="mb-3">
+        <label class="form-label">Nền tảng</label>
+        <select name="platform" class="form-select" required>
+            <option value="facebook" {% if platform_credential.platform == "facebook" %}selected{% endif %}>Facebook</option>
+            <option value="zalo" {% if platform_credential.platform == "zalo" %}selected{% endif %}>Zalo</option>
+            <option value="telegram" {% if platform_credential.platform == "telegram" %}selected{% endif %}>Telegram</option>
+        </select>
+    </div>
+
+    <!-- Page ID -->
+    <div class="mb-3">
+        <label class="form-label">Page ID</label>
+        <input type="text" name="page_id" value="{{ platform_credential.page_id or ''}}" class="form-control" required >
+    </div>
+
+    <!-- ACCESS TOKEN -->
+    <div class="mb-3">
+        <label class="form-label">Access Token</label>
+        <input type="text" name="access_token" value="{{ platform_credential.access_token or ''}}" class="form-control" required>
+    </div>
+
+    <!-- Refresh Token -->
+    <div class="mb-3">
+        <label class="form-label">Refresh Token</label>
+        <input type="text" name="refresh_token" value="{{ platform_credential.refresh_token or ''}}" class="form-control">
+    </div>
+
+    <!-- Verify token -->
+    <div class="mb-3">
+        <label class="form-label">Verify Token (Facebook)</label>
+        <input type="text" name="verify_token" value="{{ platform_credential.verify_token or ''}}" class="form-control">
+    </div>
+
+    <!-- Secret Key -->
+    <div class="mb-3">
+        <label class="form-label">Secret Key</label>
+        <input type="text" name="secret_key" value="{{ platform_credential.secret_key or ''}}" class="form-control">
+    </div>
+
+    <!-- Config JSON -->
+    <div class="mb-3">
+        <label class="form-label">Config JSON</label>
+        <textarea name="config_json" rows="10" class="form-control">{{ page_config.config_json_pretty }}</textarea>
+
+    </div>
+
+    <button type="submit" class="btn btn-success">Lưu</button>
+    <a href="/admin/page_configs" class="btn btn-secondary">Hủy</a>
+</div>

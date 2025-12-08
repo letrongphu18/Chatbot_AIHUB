@@ -1,6 +1,7 @@
 # backend/api/webhook_routes.py
 import json
 from fastapi import APIRouter, Request, HTTPException, Response
+from backend.core import redis_client
 from backend.core.schemas import LeadData
 import redis
 import os
@@ -37,6 +38,7 @@ async def handle_webhook(request: Request):
     try:
         body = await request.json()
         r.rpush("chat_queue", json.dumps(body))
+
     except Exception as e:
         print("❌ Webhook error:", e)
     # Facebook chỉ cần 200 OK

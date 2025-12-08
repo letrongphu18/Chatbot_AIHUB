@@ -1,3 +1,5 @@
+print("[WORKER] STARTED")
+
 import os
 import sys
 import datetime
@@ -12,12 +14,12 @@ import redis
 import json
 from dotenv import load_dotenv
 
-from backend.configs.config_loader import load_config
+#from backend.configs.config_loader import load_config
 from backend.core.ai_engine import generate_ai_response
 from backend.core.flow_engine import FlowEngine
 from backend.core.fb_helper import FacebookClient
 from backend.core.crm_connector import CRMConnector
-from backend.database.load_pages_config import get_page_config_by_id, load_all_fb_tokens
+#from backend.database.load_pages_config import get_page_config_by_id, load_all_fb_tokens
 from backend.database import crud
 HANDOFF_TIMEOUT_SECONDS = 600
 load_dotenv()
@@ -25,14 +27,15 @@ redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 redis_client = redis.from_url(redis_url)
 
 flow_engine = FlowEngine(redis_client)
-def get_db_instance():
-    db = SessionLocal()
-    try:
-        return db
-    finally:
-        pass 
-db = get_db_instance()
-fb_tokens = crud.load_all_fb_tokens(db)  # Trả về dict {page_id: FB_PAGE_ACCESS_TOKEN}
+# def get_db_instance():
+#     db = SessionLocal()
+#     try:
+#         return db
+#     finally:
+#         pass 
+# db = get_db_instance()
+fb_tokens = crud.load_all_fb_tokens()  # Trả về dict {page_id: FB_PAGE_ACCESS_TOKEN}
+print(">>> Loaded FB tokens:", fb_tokens)
 #fb_tokens = load_all_fb_tokens("backend/configs/")  # Trả về dict {page_id: FB_PAGE_ACCESS_TOKEN}
 fb_client = FacebookClient(page_tokens=fb_tokens)
 print(" Facebook Tokens loaded for pages:", list(fb_tokens.keys()))
@@ -134,7 +137,6 @@ def update_session(sender_id, page_id, topic, state, new_data=None,
     
 
 def process_message():
-    print(" Worker is listening to chat_queue...")
     while True:
         try:
             packed_item = redis_client.blpop("chat_queue", timeout=5)
@@ -142,20 +144,17 @@ def process_message():
 
             raw_json = packed_item[1]
             body = json.loads(raw_json)
-
             for entry in body.get("entry", []):
-                print("Processing entry:", entry.get("id"))
                 page_id = entry.get("id") 
                 for messaging in entry.get("messaging", []):
                     sender_id = messaging.get("sender", {}).get("id")
                     message_text = messaging.get("message", {}).get("text")
-                    print(f"User {sender_id} sent message:", message_text)
                     if not message_text: continue
 
                     # 1. Load Config (Topic Pack)
                     #config = load_config(page_id)
                     #config = get_page_config_by_id("backend/configs",page_id)
-                    config = crud.get_config_by_id(db, page_id)
+                    config = crud.get_config_by_page_id(page_id)
                     if not config:
                         print("❌ Không tìm thấy Config")
                         continue

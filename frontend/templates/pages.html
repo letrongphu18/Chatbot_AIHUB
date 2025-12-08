@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Page Config List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-5">
+    <h2 class="mb-4">Danh sách Page Configs</h2>
+
+    <div class="text-end mb-3">
+        <a href="/page_add" class="btn btn-primary">+ Thêm Page Config</a>
+    </div>
+
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Page ID</th>
+                <th>Platform</th>
+                <th>Topic</th>
+                <th>Version</th>
+                <th width="180">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in pages %}
+            <tr>
+                <td>{{ p.id }}</td>
+                <td>{{ p.page_id }}</td>
+                <td>{{ p.platform }}</td>
+                <td>{{ p.topic_id }}</td>
+                <td>{{ p.config_version }}</td>
+                <td>
+                    <a href="/page_edit/{{ p.channel_id }}" class="btn btn-sm btn-warning">Sửa</a>
+                    <a href="/admin/page_config/delete/{{ p.page_id }}?platform={{ p.platform }}"
+                       onclick="return confirm('Bạn chắc chắn muốn xóa?');"
+                       class="btn btn-sm btn-danger">
+                        Xóa
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

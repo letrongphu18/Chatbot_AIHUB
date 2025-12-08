@@ -1,74 +1,73 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Body, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 from backend.auth.api_key_auth import check_api_key
+from backend.database.load_pages_config import PageConfig
 from backend.database.session import SessionLocal
-from backend.database.schemas.page_config import PageConfigIn
-from backend.database.crud import get_all_configs, get_config_by_id, add_config, update_page_config, delete_page_config
+from backend.schemas.page_config import PageConfigIn
+# from backend.database.crud import get_all_configs, get_config_by_id, add_config, update_config, delete_config, get_platform_credential
 from backend.database import crud
+from backend.schemas.page_schema import PagePayload
 router = APIRouter()
 
 # Dependency để lấy DB session
-def get_db_instance():
-    db = SessionLocal()
-    try:
-        return db
-    finally:
-        pass  
 
 # -----------------------------
 # Load danh sách tất cả page
 # -----------------------------
-@router.get("/api/page_configs", dependencies=[Depends(check_api_key)])
-def get_page_configs():
-    db = get_db_instance()
-    page_configs = crud.get_all_configs(db)
-    return {"page_configs": page_configs}
+@router.get("/api/pages", dependencies=[Depends(check_api_key)])
+def get_pages():
+    pages = crud.get_all_configs()
+    return {"pages": pages}
 
 
 # -----------------------------
 # Lấy chi tiết page theo page_id
 # -----------------------------
-@router.get("/api/page_config_details/{page_id}")
-def get_page_config_details(page_id: str):
-    db = get_db_instance()
-    config = crud.get_config_by_id(db, page_id)
+@router.get("/api/page_details/{channel_id}")
+def get_page_details(channel_id: int):
+    config = crud.get_config_by_channel(channel_id)
+    credential = crud.get_channel(channel_id)
     if not config:
         raise HTTPException(status_code=404, detail="Page config not found")
-    return config
+    if not credential:
+        raise HTTPException(status_code=404, detail="Platform credential not found")
+    return {"config": config, "credential": credential}
 
 
 # -----------------------------
 # Thêm thông tin page
 # -----------------------------
-@router.post("/api/page_config")
-def add_page_config(config: PageConfigIn):
-    db = get_db_instance()
-    success = crud.add_config(db, config.dict())
+@router.post("/api/page")
+def add_page(payload: dict = Body(...)):
+    config = payload.get("config")
+    platform = payload.get("platform")
+    success = crud.add_page(config, platform)
     if not success:
         raise HTTPException(status_code=400, detail="Page config already exists")
-    return {"message": "Page config added", "page_id": config.facebook_settings.FB_PAGEID}
+    return {"message": "Page config added"}
 
 
 # -----------------------------
 # Cập nhật thông tin page
 # -----------------------------
-@router.put("/api/page_config/{page_id}")
-def update_page_config(page_id: str, config: PageConfigIn):
-    db = get_db_instance()
-    success = crud.update_page_config(db, page_id, config.dict())
+@router.put("/api/page/{channel_id}")
+def update_page_config(channel_id: int, payload: PagePayload = Body(...)):
+    platform = payload.platform
+    config = payload.config
+    print("Updating page:", channel_id, platform, config)
+    success = crud.update_page(channel_id, platform, config)
     if not success:
         raise HTTPException(status_code=404, detail="Page config not found")
-    return {"message": "Page config updated", "page_id": page_id}
+    return {"message": "Page config updated", "channel_id": channel_id}
 
 
 # -----------------------------
 # Xóa thông tin page
 # -----------------------------
-@router.delete("/api/page_config/{page_id}")
-def delete_page_config(page_id: str):
-    db = get_db_instance()
-    success = crud.delete_page_config(db, page_id)
+@router.delete("/api/page/{channel_id}")
+def delete_page(channel_id: int):
+    success = crud.delete_page(channel_id)
     if not success:
         raise HTTPException(status_code=404, detail="Page config not found")
-    return {"message": "Page config deleted", "page_id": page_id}
+    return {"message": "Page config deleted", "channel_id": channel_id}
