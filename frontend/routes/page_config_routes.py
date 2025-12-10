@@ -1,9 +1,6 @@
 import json
-from tempfile import template
 from typing import Any
-from urllib import response
 from fastapi.responses import RedirectResponse
-from httpcore import request
 import httpx
 
 from fastapi import APIRouter, Body, Form, Request
@@ -15,32 +12,36 @@ from backend.database.models.page_config import Channel, PageConfig
 router = APIRouter()
 templates = Jinja2Templates(directory="frontend/templates")
 
+
 @router.get("/pages")
 def get_pages(request: Request):
     print("Fetching page configurations...")
     api_url = "http://localhost:8099/api/pages"
-    headers = {"X-API-KEY": "abc123"}  
+    headers = {"X-API-KEY": "abc123"}
+    
     response = httpx.get(api_url, headers=headers)
     pages = response.json().get("pages", [])
     print(f"Retrieved {len(pages)} page configurations.")
+
     return templates.TemplateResponse(
         "pages.html",
         {"request": request, "pages": pages}
     )
 
+
 @router.get("/page_add")
 def page_add(request: Request):
-        page_config =  PageConfig()
-        platform_credential = Channel()
-        return templates.TemplateResponse(
-            "page_add.html",
-            {
-                "request": request, 
-                "page_config": page_config,
-                "platform_credential": platform_credential
-            },
-                status_code=404
-        )
+    page_config = PageConfig()
+    platform_credential = Channel()
+
+    return templates.TemplateResponse(
+        "page_add.html",
+        {
+            "request": request,
+            "page_config": page_config,
+            "platform_credential": platform_credential
+        }
+    )
 
 
 @router.post("/pages/create")
@@ -72,23 +73,23 @@ async def page_create(
         }
     }
 
-    # Gửi sang API thật của bạn
     api_url = "http://localhost:8099/api/page"
-    headers = {"X-API-KEY": "abc123"}  
-    
+    headers = {"X-API-KEY": "abc123"}
+
     async with httpx.AsyncClient() as client:
         response = await client.post(api_url, headers=headers, json=payload)
         try:
-            data = response.json()
+            _ = response.json()
             return RedirectResponse(url="/pages", status_code=303)
         except ValueError:
-            data = {"error": "Response không phải JSON", "content": response.text}
-        return {"status": "error", "detail": response.text}
+            return {"status": "error", "detail": response.text}
+
 
 @router.get("/page_edit/{channel_id}")
 def page_edit(request: Request, channel_id: str):
     api_url = f"http://localhost:8099/api/page_details/{channel_id}"
-    headers = {"X-API-KEY": "abc123"}  
+    headers = {"X-API-KEY": "abc123"}
+
     response = httpx.get(api_url, headers=headers)
     if response.status_code != 200:
         return templates.TemplateResponse(
@@ -96,15 +97,19 @@ def page_edit(request: Request, channel_id: str):
             {"request": request, "message": "Page configuration not found."},
             status_code=404
         )
+
     data = response.json()
     pretty_json = json.dumps(data["config"]["config_json"], ensure_ascii=False, indent=2)
+
     return templates.TemplateResponse(
         "page_edit.html",
-        {   "request": request,
-            "page_config": { **data["config"], "config_json_pretty": pretty_json },
+        {
+            "request": request,
+            "page_config": {**data["config"], "config_json_pretty": pretty_json},
             "platform_credential": data["credential"]
         }
     )
+
 
 @router.post("/pages/update/{channel_id}")
 async def submit_update_page(
@@ -136,15 +141,13 @@ async def submit_update_page(
         }
     }
 
-    # Gửi sang API thật của bạn
     api_url = f"http://localhost:8099/api/page/{channel_id}"
+    headers = {"X-API-KEY": "abc123"}
 
     async with httpx.AsyncClient() as client:
-        headers = {"X-API-KEY": "abc123"}  
         response = await client.put(api_url, headers=headers, json=payload)
         try:
-            data = response.json()
+            _ = response.json()
             return RedirectResponse(url="/pages", status_code=303)
         except ValueError:
-            data = {"error": "Response không phải JSON", "content": response.text}
-        return {"status": "error", "detail": response.text}
+            return {"status": "error", "detail": response.text}

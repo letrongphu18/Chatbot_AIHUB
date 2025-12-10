@@ -191,7 +191,11 @@ def delete_page(channel_id: int) -> bool:
 
 
 def get_all_configs():
-    return [cfg.to_dict() for cfg in db.query(PageConfig).all()]
+    try:
+        records = db.query(PageConfig).all()
+        return [cfg.to_dict() for cfg in records]
+    except Exception as e:
+        raise Exception(f"Database error in get_all_configs: {str(e)}")
 
 def load_all_fb_tokens() -> dict:
     return {

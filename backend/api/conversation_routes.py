@@ -6,11 +6,11 @@ from backend.auth.api_key_auth import check_api_key
 from backend.database.crud import load_all_fb_tokens
 from backend.database import crud
 from backend.database.session import SessionLocal
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(check_api_key)])
 
 # Dependency để lấy DB session
 
-@router.get("/api/conversations", dependencies=[Depends(check_api_key)])
+@router.get("/api/conversations")
 def get_conversations():
     #PAGE_TOKENS = load_all_fb_tokens("backend/configs")
     PAGE_TOKENS = crud.load_all_fb_tokens()
@@ -87,7 +87,7 @@ def get_conversations():
         "page_ids": list(PAGE_TOKENS.keys())
     }
 
-@router.get("/api/conversations/{conversation_id}", dependencies=[Depends(check_api_key)])
+@router.get("/api/conversations/{conversation_id}")
 def get_conversation_details(
     conversation_id: str,
     page_id: str = Query(..., description="ID fanpage để lấy access_token"),

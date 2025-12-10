@@ -1,6 +1,7 @@
 # backend/api/webhook_routes.py
 import json
 from fastapi import APIRouter, Request, HTTPException, Response
+import httpx
 from backend.core import redis_client
 from backend.core.schemas import LeadData
 import redis
@@ -12,7 +13,7 @@ r = redis.from_url(redis_url)
 
 # Lấy VERIFY_TOKEN
 VERIFY_TOKEN = os.getenv("FB_VERIFY_TOKEN", "1234567890")
-
+ASP_CORE_URL = "https://localhost:7275/api/chatbot/fb-webhook"
 # Tạo router FastAPI
 router = APIRouter()
 
@@ -32,16 +33,18 @@ def verify_webhook(request: Request):
 
 @router.post("/webhook")
 async def handle_webhook(request: Request):
-    # body = await request.json()
-    # r.rpush("chat_queue", json.dumps(body))
-    # return {"message": "Event received"}
     try:
         body = await request.json()
         r.rpush("chat_queue", json.dumps(body))
-
+        async with httpx.AsyncClient(verify=False) as client:
+            try:
+                await client.post(ASP_CORE_URL, json=body)
+            except Exception as e:
+                import traceback
+                print("❌ Error calling ASP.NET Core:")
+                traceback.print_exc()
     except Exception as e:
         print("❌ Webhook error:", e)
-    # Facebook chỉ cần 200 OK
     return Response(status_code=200)
 
 @router.post("/mock-crm/leads")

@@ -15,12 +15,15 @@ router = APIRouter(dependencies=[Depends(check_api_key)])
 # -----------------------------
 # Load danh sách tất cả page
 # -----------------------------
+
 @router.get("/api/pages")
 def get_pages():
-    pages = crud.get_all_configs()
-    return {"pages": pages}
-
-
+    try:
+        pages = crud.get_all_configs()
+        return {"pages": pages}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving pages: {str(e)}")
+    
 # -----------------------------
 # Lấy chi tiết page theo page_id
 # -----------------------------

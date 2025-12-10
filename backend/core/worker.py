@@ -19,32 +19,36 @@ from backend.core.ai_engine import generate_ai_response
 from backend.core.flow_engine import FlowEngine
 from backend.core.fb_helper import FacebookClient
 from backend.core.crm_connector import CRMConnector
-#from backend.database.load_pages_config import get_page_config_by_id, load_all_fb_tokens
 from backend.database import crud
 HANDOFF_TIMEOUT_SECONDS = 600
 load_dotenv()
+
+# ----------------------
+# Kiểm tra Redis và Google API Key
+# ----------------------
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 redis_client = redis.from_url(redis_url)
 
+try:
+    redis_client.ping()
+except redis.exceptions.ConnectionError:
+    print("❌ Redis chưa sẵn sàng. Thử lại sau 5s...")
+    time.sleep(5)
+    sys.exit(1)
+
+if not os.getenv("GOOGLE_API_KEY"):
+    print("❌ Chưa cấu hình GOOGLE_API_KEY")
+    sys.exit(1)
+
+
 flow_engine = FlowEngine(redis_client)
-# def get_db_instance():
-#     db = SessionLocal()
-#     try:
-#         return db
-#     finally:
-#         pass 
-# db = get_db_instance()
-fb_tokens = crud.load_all_fb_tokens()  # Trả về dict {page_id: FB_PAGE_ACCESS_TOKEN}
-print(">>> Loaded FB tokens:", fb_tokens)
-#fb_tokens = load_all_fb_tokens("backend/configs/")  # Trả về dict {page_id: FB_PAGE_ACCESS_TOKEN}
+
+fb_tokens = crud.load_all_fb_tokens()  # Nhớ kiểm tra bảo mật
+#fb_tokens = load_all_fb_tokens("backend/configs/")  
 fb_client = FacebookClient(page_tokens=fb_tokens)
-print(" Facebook Tokens loaded for pages:", list(fb_tokens.keys()))
-#fb_client = FacebookClient()
 crm = CRMConnector()
 
 print(" WORKER ĐANG CHẠY... ")
-
-
 
 
 def get_chat_history(sender_id):

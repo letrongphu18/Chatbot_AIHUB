@@ -10,6 +10,7 @@ from backend.api.webhook_routes import router as webhook_router
 from backend.api.conversation_routes import router as conversation_router
 from backend.api.page_config_routes import router as page_config_routes
 from frontend.routes.page_config_routes import router as page_config_frontend_routes
+from frontend.routes.conversation_routes import router as conversation_frontend_routes
 from dotenv import load_dotenv
 load_dotenv() 
 from backend.core.redis_client import r
@@ -22,6 +23,7 @@ app.include_router(webhook_router)
 app.include_router(conversation_router)
 app.include_router(page_config_routes)
 app.include_router(page_config_frontend_routes)
+app.include_router(conversation_frontend_routes)
 
 # VERIFY_TOKEN = os.getenv("FB_VERIFY_TOKEN", "1234567890")
 # redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
