@@ -13,8 +13,8 @@ r = redis.from_url(redis_url)
 
 # Lấy VERIFY_TOKEN
 VERIFY_TOKEN = os.getenv("FB_VERIFY_TOKEN", "1234567890")
-ASP_CORE_URL = "https://localhost:7275/api/chatbot/fb-webhook"
-# Tạo router FastAPI
+ASP_CORE_URL = os.getenv("API_FB_WEBHOOK_URL", "https://localhost:7275/api/chatbot/fb-webhook")
+
 router = APIRouter()
 
 @router.get("/webhook")
