@@ -37,6 +37,7 @@ def get_conversations():
 
             for conv in conversations:
                 conv_id = conv.get("id")
+                link = conv.get("link", "")
                 last_msg = conv.get("messages", {}).get("data", [])
                 if last_msg:
                     m = last_msg[0]
@@ -58,10 +59,12 @@ def get_conversations():
                     "conversation_id": conv_id,
                     "page_id": page_id,
                     "fanpage_name": crud.get_page_name_by_id(page_id, ACCESS_TOKEN),
+                    "link": link,
                     "fullname": fullname,        # <-- Tên người gửi tin nhắn cuối
                     "customer_name": "",
                     "phone": "",
                     "email": "",
+                    "tags": "",
                     "last_message": message, # tin nhắn cuối
                     "last_message_time": created_time,
                     "last_message_dt": dt
