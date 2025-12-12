@@ -2,7 +2,7 @@ from datetime import datetime
 from logging import config
 from sqlalchemy.orm import Session
 from backend.database.models.page_config import Channel, PageConfig
-
+from sqlalchemy import cast, String
 import json
 
 from backend.database.session import SessionLocal
@@ -189,14 +189,27 @@ def delete_page(channel_id: int) -> bool:
     db.commit()
     return True
 
-
+# dùng trong api quản trị danh sách page
 def get_all_configs():
     try:
-        records = db.query(PageConfig).all()
-        return [cfg.to_dict() for cfg in records]
+        records = db.query(
+            PageConfig.channel_id,
+            cast(PageConfig.config_json["meta_data"]["brand_default"], String).label("brand_default")
+        ).all()
+
+        # Dùng list comprehension để parse JSON một lần
+        result = [
+            {
+                "id": r.channel_id,
+                "name": json.loads(r.brand_default) if r.brand_default else None
+            }
+            for r in records
+        ]
+        return result
     except Exception as e:
         raise Exception(f"Database error in get_all_configs: {str(e)}")
 
+# dùng trong worker để load tất cả token fb
 def load_all_fb_tokens() -> dict:
     return {
         plf.page_id: plf.access_token
