@@ -214,7 +214,7 @@ def add_page(page: dict):
 #     return True
 
 
-def update_page(channel_id: int, platform: dict , config: dict ):
+def update_page(channel_id: int, page: dict ):
     cfg = (
         db.query(PageConfig)
         .filter(PageConfig.channel_id == channel_id)
@@ -234,38 +234,51 @@ def update_page(channel_id: int, platform: dict , config: dict ):
         return False
 
     # ---- UPDATE CONFIG_JSON ----
-    if config:
-        cfg.topic_id = config.get("topic_id", cfg.topic_id)
-        cfg.config_version = config.get("config_version", cfg.config_version)
-        raw = config.get("config_json")
-
-        if isinstance(raw, str):
-            raw = raw.strip()
-            if raw == "" or raw.lower() == "none":
-                raw = {}
-            else:
-                try:
-                    raw = json.loads(raw)
-                except:
-                    raise ValueError("config_json is not valid JSON")
-        cfg.config_json = raw
-        cfg.updated_at = datetime.utcnow()
-
-    # ---- UPDATE PLATFORM TOKEN ----
-    if platform:
-        if platform.get("page_id"):
-            cred.page_id = platform["page_id"]
-        if platform.get("access_token"):
-            cred.access_token = platform["access_token"]
-        if platform.get("verify_token"):
-            cred.verify_token = platform["verify_token"]
-        if platform.get("refresh_token"):
-            cred.refresh_token = platform["refresh_token"]
-        if platform.get("secret_key"):
-            cred.secret_key = platform["secret_key"]
-
+    
+    if page:
+        # ---- UPDATE PLATFORM TOKEN ----
+        if page.get("page_id"):
+            cred.page_id = page.get("page_id")
+        if page.get("access_token"):
+            cred.access_token = page.get("access_token")
+        cred.verify_token = page.get("verify_token", cred.verify_token)
+        cred.refresh_token = page.get("refresh_token", cred.refresh_token)
+        cred.secret_key = page.get("secret_key", cred.secret_key)
         cred.updated_at = datetime.utcnow()
 
+        # ---- UPDATE PAGE CONFIG ----
+        cfg.topic_id = page.get("topic_id", cfg.topic_id)
+        cfg.config_version = page.get("config_version", cfg.config_version)
+        brand_default = page.get("brand_default", "")
+        description = page.get("description", "")
+        tone_style = page.get("tone_style", "")
+        main_objective = page.get("main_objective", "")
+        core_questions = page.get("core_questions", [])
+        phone_request_template = page.get("phone_request_template", [])
+        closing_strategy = page.get("closing_strategy", "")
+        classification_rules = page.get("classification_rules", {})
+        call_me = page.get("call_me", "")
+        call_user = page.get("call_user", "")
+        config_json = {
+                        "meta_data": {
+                            "brand_default": brand_default,
+                            "description": description,
+                            "tone_style": tone_style,
+                            "main_objective": main_objective,
+                        },
+                        "content_strategy": {
+                            "core_questions": core_questions,
+                            "phone_request_template": phone_request_template,
+                            "closing_strategy": closing_strategy,
+                            "classification_rules": classification_rules,
+                        },
+                        "system_settings": {
+                            "call_me": call_me,
+                            "call_user": call_user,
+                        }
+                    }
+        cfg.config_json = config_json
+        cfg.updated_at = datetime.utcnow()
     db.commit()
     return True
 

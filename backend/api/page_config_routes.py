@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Body, HTTPException, Depends
 from sqlalchemy.orm import Session
-from typing import List
+from typing import Any, Dict, List
 from backend.auth.api_key_auth import check_api_key
 from backend.database.load_pages_config import PageConfig
 from backend.database.session import SessionLocal
@@ -49,11 +49,8 @@ def add_page(payload: dict = Body(...)):
 # Cập nhật thông tin page
 # -----------------------------
 @router.put("/api/page/{channel_id}")
-def update_page_config(channel_id: int, payload: PagePayload = Body(...)):
-    platform = payload.platform
-    config = payload.config
-    print("Updating page:", channel_id, platform, config)
-    success = crud.update_page(channel_id, platform, config)
+def update_page_config(channel_id: int, payload: Dict[str, Any] = Body(...)):
+    success = crud.update_page(channel_id, payload)
     if not success:
         raise HTTPException(status_code=404, detail="Page config not found")
     return {"message": "Page config updated", "channel_id": channel_id}
