@@ -229,6 +229,12 @@ def get_page_name_by_id(page_id: int, access_token: str) -> str:
         raise Exception("Không tìm thấy tên page")
     return page_name
 
+# dùng trong conversation_routes để lấy token theo page_id
+def get_token_by_page_id(page_id: int) -> str:
+    channel = db.query(Channel).filter(Channel.page_id == page_id).first()
+    if not channel:
+        return None
+    return channel.access_token
 
 # dùng trong worker để load tất cả token fb
 def load_all_fb_tokens() -> dict:

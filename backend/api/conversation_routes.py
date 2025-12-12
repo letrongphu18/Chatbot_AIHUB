@@ -52,9 +52,7 @@ def get_conversations():
                     dt = datetime.fromisoformat(created_time.replace("Z", "+00:00"))
                 except:
                     dt = datetime.min
-
                 conv_key = f"{page_id}_{conv_id}"
-
                 conversations_map[conv_key] = {
                     "conversation_id": conv_id,
                     "page_id": page_id,
@@ -81,16 +79,12 @@ def get_conversation_details(
     conversation_id: str,
     page_id: str = Query(..., description="ID fanpage để lấy access_token"),
 ):
-    #PAGE_TOKENS = load_all_fb_tokens("backend/configs")
-    PAGE_TOKENS = crud.load_all_fb_tokens()
-    ACCESS_TOKEN = PAGE_TOKENS.get(page_id)
 
+    ACCESS_TOKEN = crud.get_token_by_page_id(page_id)
+    
     if not ACCESS_TOKEN:
         return {"success": False, "error": "Page ID không có token hợp lệ."}
-
     all_messages = []
-    
-    # URL ban đầu
     url = f"https://graph.facebook.com/v17.0/{conversation_id}"
     params = {
         "access_token": ACCESS_TOKEN,
@@ -99,13 +93,9 @@ def get_conversation_details(
             "messages.limit(50){id,message,from,created_time}"
         )
     }
-
-    # Lặp phân trang theo cursor
     while True:
         res = requests.get(url, params=params, timeout=10)
         data = res.json()
-
-        # Lấy danh sách tin nhắn
         msgs = data.get("messages", {}).get("data", [])
         all_messages.extend(msgs)
 
@@ -130,7 +120,12 @@ def get_conversation_details(
         "success": True,
         "conversation_id": conversation_id,
         "page_id": page_id,
-        "participants": participants,
-        "total_messages": len(all_messages),
+        "fanpage_name": crud.get_page_name_by_id(page_id, ACCESS_TOKEN),
+        "customer_name": "",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "email": "",
+        "customer_needs": "",
         "messages": all_messages
     }
