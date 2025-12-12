@@ -12,17 +12,12 @@ router = APIRouter(dependencies=[Depends(check_api_key)])
 
 @router.get("/api/conversations")
 def get_conversations():
-    #PAGE_TOKENS = load_all_fb_tokens("backend/configs")
     PAGE_TOKENS = crud.load_all_fb_tokens()
-    limit = 100  # tăng limit để giảm số lần gọi API
-
+    limit = 100  
     conversations_map = {}
-
     for page_id, ACCESS_TOKEN in PAGE_TOKENS.items():
         if not ACCESS_TOKEN:
             continue
-
-        # URL bắt đầu
         url = f"https://graph.facebook.com/v17.0/{page_id}/conversations"
         params = {
             "access_token": ACCESS_TOKEN,
@@ -32,20 +27,16 @@ def get_conversations():
                 "messages.limit(1){message,from,created_time}"
             )
         }
-
-        # Loop theo paging.next cho đến khi hết dữ liệu
         while url:
             res = requests.get(url, params=params, timeout=10)
             data = res.json()
 
             conversations = data.get("data", [])
-            url = data.get("paging", {}).get("next")  # trang tiếp theo
-            params = None  # Next dùng URL đầy đủ, không cần params nữa
+            url = data.get("paging", {}).get("next")  
+            params = None 
 
             for conv in conversations:
                 conv_id = conv.get("id")
-
-                # Tin nhắn cuối
                 last_msg = conv.get("messages", {}).get("data", [])
                 if last_msg:
                     m = last_msg[0]
@@ -56,8 +47,6 @@ def get_conversations():
                     message = ""
                     created_time = ""
                     fullname = "Người dùng"
-
-                # Convert datetime để sort nhanh
                 try:
                     dt = datetime.fromisoformat(created_time.replace("Z", "+00:00"))
                 except:
@@ -68,23 +57,20 @@ def get_conversations():
                 conversations_map[conv_key] = {
                     "conversation_id": conv_id,
                     "page_id": page_id,
+                    "fanpage_name": crud.get_page_name_by_id(page_id, ACCESS_TOKEN),
                     "fullname": fullname,        # <-- Tên người gửi tin nhắn cuối
-                    "last_message": message,
+                    "customer_name": "",
+                    "phone": "",
+                    "email": "",
+                    "last_message": message, # tin nhắn cuối
                     "last_message_time": created_time,
                     "last_message_dt": dt
                 }
-
-    # Convert dict → list
     all_conversations = list(conversations_map.values())
-
-    # Sort theo thời gian giảm dần
     all_conversations.sort(key=lambda x: x["last_message_dt"], reverse=True)
-
     return {
         "success": True,
-        "total": len(all_conversations),
-        "conversations": all_conversations,
-        "page_ids": list(PAGE_TOKENS.keys())
+        "conversations": all_conversations
     }
 
 @router.get("/api/conversations/{conversation_id}")

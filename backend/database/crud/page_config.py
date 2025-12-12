@@ -1,5 +1,6 @@
 from datetime import datetime
 from logging import config
+import requests
 from sqlalchemy.orm import Session
 from backend.database.models.page_config import Channel, PageConfig
 from sqlalchemy import cast, String
@@ -208,6 +209,26 @@ def get_all_configs():
         return result
     except Exception as e:
         raise Exception(f"Database error in get_all_configs: {str(e)}")
+
+# dùng trong conversation_routes để hiển thị tên page
+def get_page_name_by_id(page_id: int, access_token: str) -> str:
+    page_url = f"https://graph.facebook.com/v17.0/{page_id}"
+    page_params = {
+        "fields": "name",
+        "access_token": access_token
+    }
+    page_response = requests.get(page_url, params=page_params)
+    try:
+        page_data = page_response.json()
+    except ValueError:
+        raise Exception("Không thể parse JSON từ response Facebook")
+    if "error" in page_data:
+        raise Exception(f"Facebook API error: {page_data['error']}")
+    page_name = page_data.get("name")
+    if not page_name:
+        raise Exception("Không tìm thấy tên page")
+    return page_name
+
 
 # dùng trong worker để load tất cả token fb
 def load_all_fb_tokens() -> dict:
