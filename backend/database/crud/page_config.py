@@ -45,6 +45,7 @@ def get_config_by_page_id(page_id: int):
     config["page_id"] = channel.page_id
     return config if config else None
 
+
 def get_config_by_channel(channel_id: int):
     cfg = db.query(PageConfig).filter(PageConfig.channel_id == channel_id).first()
     return cfg.to_dict() if cfg else None
@@ -58,6 +59,49 @@ def get_channel(channel_id: int): #Tạm thời chưa dùng platform
         .first()
     )
     return cred.to_dict() if cred else None
+
+# Dùng trong page api để lấy chi tiết page
+def get_page_by_id(channel_id: int):
+    channel = db.query(Channel).filter(Channel.id == channel_id).first()
+    if not channel:
+        return None
+
+    config = db.query(PageConfig).filter(PageConfig.channel_id == channel.id).first()
+
+    # Nếu không có config thì trả mặc định
+    config_json = config.config_json if config and config.config_json else {}
+
+    meta_data = config_json.get("meta_data", {})
+    content = config_json.get("content_strategy", {})
+    system = config_json.get("system_settings", {})
+
+    data = {
+        "id": channel.id,
+        "page_id": channel.page_id,
+        "access_token": channel.access_token,
+
+        "config_version": getattr(config, "config_version", None),
+
+        # meta_data
+        "brand_default": meta_data.get("brand_default", ""),
+        "description": meta_data.get("description", ""),
+        "tone_style": meta_data.get("tone_style", ""),
+        "main_objective": meta_data.get("main_objective", ""),
+
+        # content_strategy
+        "core_questions": content.get("core_questions", []),
+        "phone_request_template": content.get("phone_request_template", []),
+        "closing_strategy": content.get("closing_strategy", ""),
+        "classification_rules": content.get("classification_rules", {}),
+
+        # system_settings
+        "call_me": system.get("call_me", ""),
+        "call_user": system.get("call_user", ""),
+    }
+
+    return data
+
+
 
 def add_page(config: dict, platform:dict):
     page_id = platform.get("page_id")

@@ -29,14 +29,10 @@ def get_pages():
 # -----------------------------
 @router.get("/api/page_details/{channel_id}")
 def get_page_details(channel_id: int):
-    config = crud.get_config_by_channel(channel_id)
-    credential = crud.get_channel(channel_id)
+    config = crud.get_page_by_id(channel_id)
     if not config:
         raise HTTPException(status_code=404, detail="Page config not found")
-    if not credential:
-        raise HTTPException(status_code=404, detail="Platform credential not found")
-    return {"config": config, "credential": credential}
-
+    return config
 
 # -----------------------------
 # Thêm thông tin page
