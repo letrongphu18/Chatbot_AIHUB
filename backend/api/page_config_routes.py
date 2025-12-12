@@ -39,9 +39,7 @@ def get_page_details(channel_id: int):
 # -----------------------------
 @router.post("/api/page")
 def add_page(payload: dict = Body(...)):
-    config = payload.get("config")
-    platform = payload.get("platform")
-    success = crud.add_page(config, platform)
+    success = crud.add_page(payload)
     if not success:
         raise HTTPException(status_code=400, detail="Page config already exists")
     return {"message": "Page config added"}

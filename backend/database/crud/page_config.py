@@ -101,12 +101,10 @@ def get_page_by_id(channel_id: int):
 
     return data
 
-
-
-def add_page(config: dict, platform:dict):
-    page_id = platform.get("page_id")
-    access_token = platform.get("access_token")
-
+# Dùng trong page api để thêm page mới
+def add_page(page: dict):
+    page_id = page.get("page_id")
+    access_token = page.get("access_token")
     if not page_id or not access_token :
         raise ValueError("platform info incomplete")
 
@@ -119,34 +117,101 @@ def add_page(config: dict, platform:dict):
     
     cred  = Channel(
         page_id=page_id,
-        platform=platform.get("platform") ,
+        platform="facebook", 
         access_token=access_token,
-        verify_token=platform.get("verify_token"),
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow()
     )
     db.add(cred)
     db.flush()
-    if not config:
-        config = {
-            "topic_id": "",
-            "config_version": "1.0",
-            "config_json": {}
+    topic_id = page.get("topic_id", "")
+    config_version = page.get("config_version", "")
+    brand_default = page.get("brand_default", "")
+    description = page.get("description", "")
+    tone_style = page.get("tone_style", "")
+    main_objective = page.get("main_objective", "")
+    core_questions = page.get("core_questions", [])
+    phone_request_template = page.get("phone_request_template", [])
+    closing_strategy = page.get("closing_strategy", "")
+    classification_rules = page.get("classification_rules", {})
+    call_me = page.get("call_me", "")
+    call_user = page.get("call_user", "")
+    config_json = {
+        "meta_data": {
+            "brand_default": brand_default,
+            "description": description,
+            "tone_style": tone_style,
+            "main_objective": main_objective,
+        },
+        "content_strategy": {
+            "core_questions": core_questions,
+            "phone_request_template": phone_request_template,
+            "closing_strategy": closing_strategy,
+            "classification_rules": classification_rules,
+        },
+        "system_settings": {
+            "call_me": call_me,
+            "call_user": call_user,
         }
-    
+    }
+
     new_cfg = PageConfig(
         channel_id=cred.id,
-        topic_id=config["topic_id"],
-        config_version=config["config_version"],
-        config_json=config.get("config_json", {}),
+        topic_id=topic_id,
+        config_version=config_version,
+        config_json=config_json,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
     db.add(new_cfg)
-
-    
     db.commit()
     return True
+
+
+# def add_page(config: dict, platform:dict):
+#     page_id = platform.get("page_id")
+#     access_token = platform.get("access_token")
+
+#     if not page_id or not access_token :
+#         raise ValueError("platform info incomplete")
+
+#     exists = db.query(Channel).filter(
+#         Channel.page_id == page_id
+#     ).first()
+
+#     if exists:
+#         return False
+    
+#     cred  = Channel(
+#         page_id=page_id,
+#         platform=platform.get("platform") ,
+#         access_token=access_token,
+#         verify_token=platform.get("verify_token"),
+#         created_at=datetime.utcnow(),
+#         updated_at=datetime.utcnow()
+#     )
+#     db.add(cred)
+#     db.flush()
+#     if not config:
+#         config = {
+#             "topic_id": "",
+#             "config_version": "1.0",
+#             "config_json": {}
+#         }
+    
+#     new_cfg = PageConfig(
+#         channel_id=cred.id,
+#         topic_id=config["topic_id"],
+#         config_version=config["config_version"],
+#         config_json=config.get("config_json", {}),
+#         created_at=datetime.utcnow(),
+#         updated_at=datetime.utcnow(),
+#     )
+#     db.add(new_cfg)
+
+    
+#     db.commit()
+#     return True
 
 
 def update_page(channel_id: int, platform: dict , config: dict ):
