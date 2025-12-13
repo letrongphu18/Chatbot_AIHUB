@@ -31,18 +31,43 @@ def verify_webhook(request: Request):
             raise HTTPException(status_code=403, detail="Forbidden")
     return {"status": "ok"}
 
+async def is_endpoint_alive(url: str, timeout: float = 1.0) -> bool:
+    try:
+        async with httpx.AsyncClient(
+            timeout=timeout,
+            verify=False
+        ) as client:
+            response = await client.get(url)
+            return response.status_code < 500
+    except Exception:
+        return False
+
 @router.post("/webhook")
 async def handle_webhook(request: Request):
     try:
         body = await request.json()
         r.rpush("chat_queue", json.dumps(body))
-        async with httpx.AsyncClient(verify=False) as client:
-            try:
-                await client.post(ASP_CORE_URL, json=body)
-            except Exception as e:
-                import traceback
-                print("❌ Error calling ASP.NET Core:")
-                traceback.print_exc()
+        if ASP_CORE_URL:
+            alive = await is_endpoint_alive(ASP_CORE_URL)
+            if alive:
+                try:
+                    async with httpx.AsyncClient(
+                        timeout=3,
+                        verify=False
+                    ) as client:
+                        await client.post(ASP_CORE_URL, json=body)
+                except Exception as e:
+                    print("⚠️ ASP.NET Core gọi thất bại, bỏ qua:", e)
+            else:
+                print("⚠️ ASP.NET Core không hoạt động, skip gọi")
+
+        # async with httpx.AsyncClient(verify=False) as client:
+        #     try:
+        #         await client.post(ASP_CORE_URL, json=body)
+        #     except Exception as e:
+        #         import traceback
+        #         print("❌ Error calling ASP.NET Core:")
+        #         traceback.print_exc()
     except Exception as e:
         print("❌ Webhook error:", e)
     return Response(status_code=200)
