@@ -7,11 +7,14 @@ from dotenv import load_dotenv
 # Load API Key
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
+api_name = os.getenv("GOOGLE_API_NAME", "gemini-2.0-pro")
 if not api_key:
     print("❌ Lỗi: Chưa cấu hình GOOGLE_API_KEY")
 else:
     genai.configure(api_key=api_key)
 
+if not api_name:
+    print("❌ Lỗi: Chưa cấu hình GOOGLE_API_NAME")
 
 
 # Chỗ này là system prompt lấy từ tài liệu cty gửi hen
@@ -115,7 +118,7 @@ def generate_ai_response(chat_history, config, session_data_json):
   
     try:
         model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash", 
+            model_name=api_name,
             system_instruction=MASTER_SYSTEM_PROMPT, # <--- System Prompt Cố định
             generation_config={"response_mime_type": "application/json"}
         )
@@ -127,7 +130,9 @@ def generate_ai_response(chat_history, config, session_data_json):
     except Exception as e:
         print(f" Lỗi AI Engine: {e}")
         return {
-            "reply_text": "Hệ thống đang bận, anh/chị chờ em lát nha.",
+            "reply_text": f"{e} Hệ thống đang bận, anh/chị chờ em lát nha.",
             "next_state": "ERROR",
             "need_phone": False
         }
+
+   
