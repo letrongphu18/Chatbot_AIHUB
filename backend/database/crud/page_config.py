@@ -69,8 +69,7 @@ def get_page_by_id(channel_id: int):
     config = db.query(PageConfig).filter(PageConfig.channel_id == channel.id).first()
 
     # Nếu không có config thì trả mặc định
-    config_json = config.config_json if config and config.config_json else {}
-
+    config_json = config.config_json if config and config.config_json else "{}"
     meta_data = config_json.get("meta_data", {})
     content = config_json.get("content_strategy", {})
     system = config_json.get("system_settings", {})

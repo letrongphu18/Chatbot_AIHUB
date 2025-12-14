@@ -128,11 +128,13 @@ def generate_ai_response(chat_history, config, session_data_json):
         return json.loads(response.text)
         
     except Exception as e:
-        print(f" Lỗi AI Engine: {e}")
+        print(" Lỗi AI Engine:")
         return {
-            "reply_text": f"{e} Hệ thống đang bận, anh/chị chờ em lát nha.",
+            "reply_text": f" Hệ thống đang bận, anh/chị chờ em lát nha.",
             "next_state": "ERROR",
-            "need_phone": False
+            "need_phone": False,
+            "classification": "unknown",
+            "tags": []
         }
 
    

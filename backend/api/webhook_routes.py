@@ -6,7 +6,9 @@ from backend.core import redis_client
 from backend.core.schemas import LeadData
 import redis
 import os
-
+from fastapi.responses import PlainTextResponse
+from dotenv import load_dotenv
+load_dotenv()
 # Khởi tạo Redis
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 r = redis.from_url(redis_url)
@@ -16,20 +18,29 @@ VERIFY_TOKEN = os.getenv("FB_VERIFY_TOKEN", "1234567890")
 ASP_CORE_URL = os.getenv("API_FB_WEBHOOK_URL", "https://localhost:7275/api/chatbot/fb-webhook")
 
 router = APIRouter()
+from backend.core.crm_connector import CRMConnector
 
-@router.get("/webhook")
-def verify_webhook(request: Request):
+crm = CRMConnector()
+
+def _verify_webhook(request: Request):
     mode = request.query_params.get("hub.mode")
     token = request.query_params.get("hub.verify_token")
     challenge = request.query_params.get("hub.challenge")
 
-    if mode and token:
-        if mode == "subscribe" and token == VERIFY_TOKEN:
-            print("WEBHOOK_VERIFIED")
-            return int(challenge)
-        else:
-            raise HTTPException(status_code=403, detail="Forbidden")
-    return {"status": "ok"}
+    if mode == "subscribe" and token == VERIFY_TOKEN:
+        print("WEBHOOK_VERIFIED")
+        return PlainTextResponse(content=challenge)
+    return PlainTextResponse(content="Forbidden", status_code=403)
+
+# Route với slash cuối
+@router.get("/webhook/")
+def verify_webhook_slash(request: Request):
+    return _verify_webhook(request)
+
+# Route không slash, tránh redirect
+@router.get("/webhook", include_in_schema=False)
+def verify_webhook_noslash(request: Request):
+    return _verify_webhook(request)
 
 async def is_endpoint_alive(url: str, timeout: float = 1.0) -> bool:
     try:
@@ -72,20 +83,37 @@ async def handle_webhook(request: Request):
         print("❌ Webhook error:", e)
     return Response(status_code=200)
 
-@router.post("/mock-crm/leads")
-async def receive_lead_from_bot(lead: LeadData):
-    print("\n----------------------------------------")
-    print("🌟 [MOCK CRM] ĐÃ NHẬN ĐƯỢC DEAL MỚI!")
-    print(f"👤 Khách hàng: {lead.full_name}")
-    print(f"📞 SĐT: {lead.phone} | 📧 Email: {lead.email}")
-    print(f"🎯 Intent: {lead.intent}")
-    print(f"📊 Phân loại: {lead.classification}")
-    print(f"💯 Lead Score: {lead.score}/100")
-    print(f"📝 Ghi chú AI: {lead.notes}")
-    print("----------------------------------------\n")
+# def extract_lead_from_fb(body: dict):
+#     try:
+#         entry = body["entry"][0]
+#         messaging = entry["messaging"][0]
+#         sender_id = messaging["sender"]["id"]
+#         text = messaging.get("message", {}).get("text", "")
+#         return {
+#             "facebook_id": sender_id,
+#             "phone": None,          # chưa có
+#             "full_name": None,
+#             "message": text,
+#             "source": "facebook"
+#         }
+#     except Exception as e:
+#         print("❌ Không parse được lead:", e)
+#         return None
+
+# @router.post("/mock-crm/leads")
+# async def receive_lead_from_bot(lead: LeadData):
+#     print("\n----------------------------------------")
+#     print("🌟 [MOCK CRM] ĐÃ NHẬN ĐƯỢC DEAL MỚI!")
+#     print(f"👤 Khách hàng: {lead.full_name}")
+#     print(f"📞 SĐT: {lead.phone} | 📧 Email: {lead.email}")
+#     print(f"🎯 Intent: {lead.intent}")
+#     print(f"📊 Phân loại: {lead.classification}")
+#     print(f"💯 Lead Score: {lead.score}/100")
+#     print(f"📝 Ghi chú AI: {lead.notes}")
+#     print("----------------------------------------\n")
     
-    return {
-        "status": "success",
-        "message": "Lead created successfully",
-        "deal_id": "DEAL_NEW_9999"
-    }
+#     return {
+#         "status": "success",
+#         "message": "Lead created successfully",
+#         "deal_id": "DEAL_NEW_9999"
+#     }

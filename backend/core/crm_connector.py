@@ -4,10 +4,12 @@ import json
 import os
 import redis
 from backend.core.redis_client import r
+from backend.database.crud.lead_service import save_lead_to_db
+from backend.core.redis_client import r
 
 # Cấu hình Charm.Contact (Sau này thay bằng URL thật giờ tui làm mock thôi)
-CHARM_API_URL = os.getenv("CHARM_API_URL", "http://127.0.0.1:8000/mock-crm/leads")
-CHARM_API_KEY = os.getenv("CHARM_API_KEY", "mock-key")
+# CHARM_API_URL = os.getenv("CHARM_API_URL", "http://127.0.0.1:8000/mock-crm/leads")
+# CHARM_API_KEY = os.getenv("CHARM_API_KEY", "mock-key")
 
 class CRMConnector:
     # def __init__(self):
@@ -22,32 +24,38 @@ class CRMConnector:
         3. Nếu có rồi -> Cập nhật (Update).
         4. Nếu lỗi -> Đẩy vào Queue Retry.
         """
-        print(f" Đang bắn Lead sang CRM: {lead_data['phone']}...")
+        # phone = lead_data.get("phone")
+        # if not phone:
+        #     print("⚠️ Không có số điện thoại, bỏ qua lưu Lead")
+        #     return False
 
+        # print(f"💾 Lưu lead vào DB: {phone}...")
+        print(lead_data)
         try:
+            deal_id = save_lead_to_db(lead_data)
+            print(f"💾 Lưu lead vào DB... {deal_id}")
+            return True
+            # headers = {
+            #     "Content-Type": "application/json",
+            #     "Authorization": f"Bearer {CHARM_API_KEY}"
+            # }
             
-            
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {CHARM_API_KEY}"
-            }
-            
-            response = requests.post(
-                CHARM_API_URL, 
-                json=lead_data,
-                headers=headers,
-                timeout=10 
-            )
+            # response = requests.post(
+            #     CHARM_API_URL, 
+            #     json=lead_data,
+            #     headers=headers,
+            #     timeout=10 
+            # )
             
         
-            if response.status_code in [200, 201]:
-                print(f"✅ CRM Success: Deal ID {response.json().get('deal_id', 'Unknown')}")
-                return True
+            # if response.status_code in [200, 201]:
+            #     print(f"✅ CRM Success: Deal ID {response.json().get('deal_id', 'Unknown')}")
+            #     return True
                 
-            else:
-                print(f" CRM Trả lỗi {response.status_code}: {response.text}")
+            # else:
+            #     print(f" CRM Trả lỗi {response.status_code}: {response.text}")
              
-                raise Exception(f"CRM Error {response.status_code}")
+            #     raise Exception(f"CRM Error {response.status_code}")
 
         except Exception as e:
        
@@ -61,6 +69,7 @@ class CRMConnector:
     def retry_push(self, lead_data):
         """Đẩy lead bị lỗi vào Redis để thử lại sau"""
         try:
-            self.redis.rpush("crm_retry_queue", json.dumps(lead_data))
+            #self.redis.rpush("crm_retry_queue", json.dumps(lead_data))
+            r.rpush("crm_retry_queue", json.dumps(lead_data))
         except Exception as e:
             print(f" LỖI NGHIÊM TRỌNG: Không thể lưu Retry! {e}")
