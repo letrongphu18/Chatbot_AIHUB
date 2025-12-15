@@ -74,7 +74,7 @@ def get_conversations():
         "conversations": all_conversations
     }
 
-@router.get("/api/conversations/{conversation_id}")
+@router.get("/api/conversation/{conversation_id}")
 def get_conversation_details(
     conversation_id: str,
     page_id: str = Query(..., description="ID fanpage để lấy access_token"),

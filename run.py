@@ -4,7 +4,6 @@ import sys
 import threading
 import time
 import subprocess
-from backend.app import create_app
 from dotenv import load_dotenv
 load_dotenv() 
 

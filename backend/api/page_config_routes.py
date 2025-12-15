@@ -20,14 +20,14 @@ router = APIRouter(dependencies=[Depends(check_api_key)])
 def get_pages():
     try:
         pages = crud.get_all_configs()
-        return {"pages": pages}
+        return pages
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving pages: {str(e)}")
     
 # -----------------------------
 # Lấy chi tiết page theo page_id
 # -----------------------------
-@router.get("/api/page_details/{channel_id}")
+@router.get("/api/page/{channel_id}")
 def get_page_details(channel_id: int):
     config = crud.get_page_by_id(channel_id)
     if not config:
@@ -37,7 +37,7 @@ def get_page_details(channel_id: int):
 # -----------------------------
 # Thêm thông tin page
 # -----------------------------
-@router.post("/api/page")
+@router.post("/api/page_add")
 def add_page(payload: dict = Body(...)):
     success = crud.add_page(payload)
     if not success:
@@ -48,7 +48,7 @@ def add_page(payload: dict = Body(...)):
 # -----------------------------
 # Cập nhật thông tin page
 # -----------------------------
-@router.put("/api/page/{channel_id}")
+@router.put("/api/page_update/{channel_id}")
 def update_page_config(channel_id: int, payload: Dict[str, Any] = Body(...)):
     success = crud.update_page(channel_id, payload)
     if not success:
@@ -59,7 +59,7 @@ def update_page_config(channel_id: int, payload: Dict[str, Any] = Body(...)):
 # -----------------------------
 # Xóa thông tin page
 # -----------------------------
-@router.delete("/api/page/{channel_id}")
+@router.delete("/api/page_delete/{channel_id}")
 def delete_page(channel_id: int):
     success = crud.delete_page(channel_id)
     if not success:
