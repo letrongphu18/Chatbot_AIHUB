@@ -142,6 +142,12 @@ def update_session(sender_id, page_id, topic, state, new_data=None,
 
 def process_message():
     while True:
+        db = SessionLocal()
+        try:
+            db.close()
+        except:
+            pass
+        
         try:
             packed_item = redis_client.blpop("chat_queue", timeout=5)
             if not packed_item: continue 
@@ -265,7 +271,13 @@ def process_message():
 
         except Exception as e:
             print(f" Worker Lỗi: {e}")
-            time.sleep(1)
+            import traceback
+            traceback.print_exc()
+            if "mysql" in str(e).lower() or "connection" in str(e).lower():
+                print(" Lỗi DB! Đợi 5s trước khi retry...")
+                time.sleep(5)
+            else:
+                time.sleep(1)
 
 if __name__ == "__main__":
     process_message()
