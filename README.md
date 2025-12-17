@@ -6,7 +6,7 @@ pip install -r requirements.txt
 ```
 
 **CHẠY CHƯƠNG TRÌNH**
-**Trên server**
+**<p>Trên server</p>**
 ```bash
 python run.py
 ```
