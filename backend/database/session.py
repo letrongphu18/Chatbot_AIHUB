@@ -10,8 +10,14 @@ if not DATABASE_URL:
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
-    pool_recycle=3600,
-    echo=False
+    pool_recycle=1800,
+    pool_size=10,                 
+    max_overflow=20,              
+    pool_timeout=30,            
+    echo=False,
+    connect_args={
+        "connect_timeout": 10  
+    }
 )
 
 # Tạo session
