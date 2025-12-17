@@ -259,6 +259,7 @@ def process_message():
                         # 7. Push CRM (Nếu đủ điều kiện)
                         if final_result["action"] == "PUSH_CRM":
                             print(f" DATA LEAD -> CRM...")
+                            lead_data["page_id"] = page_id
                             crm.push_lead(lead_data)
                     
                    

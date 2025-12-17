@@ -19,6 +19,7 @@ def save_lead_to_db(lead_data: dict):
         # ===== GÁN FIELD RÕ RÀNG =====
         lead.full_name   = lead_data.get("full_name", lead.full_name)
         lead.email       = lead_data.get("email", lead.email)
+        lead.page_id     = lead_data.get("page_id", lead.page_id)
         lead.facebook_uid= lead_data.get("facebook_uid", lead.facebook_uid)
         lead.profile_link= lead_data.get("profile_link", lead.profile_link)
         lead.topic       = lead_data.get("topic", lead.topic)

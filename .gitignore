@@ -4,3 +4,8 @@ __pycache__/
 venv/
 backend/configs/test.json
 test/
+frontend/
+main.py
+db.sqlite3
+chatbot_fanpage.db
+outdated.txt

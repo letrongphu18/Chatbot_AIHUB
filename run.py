@@ -12,18 +12,8 @@ load_dotenv()
 # ---------------------
 
 from backend.app import create_app
-from frontend.app import create_frontend_app
 
-backend_app = create_app()
-frontend_app = create_frontend_app()
-
-# Mount frontend vào backend
-backend_app.mount("/", frontend_app)
-
-
-app = backend_app
-
-
+app = create_app()
 # Hàm chạy tiến trình song song
 # ---------------------
 import time

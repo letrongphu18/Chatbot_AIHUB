@@ -8,6 +8,7 @@ class LeadData(BaseModel):
     """
     # 1. Thông tin cơ bản
     full_name: str = "Unknown"
+    page_id: str
     phone: Optional[str] = None
     email: Optional[str] = None  
     
