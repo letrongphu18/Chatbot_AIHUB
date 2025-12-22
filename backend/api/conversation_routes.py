@@ -90,6 +90,7 @@ def get_conversations(db: Session = Depends(get_db)):
                     conversations_map[conv_key] = {
                         "conversation_id": conv_id,
                         "page_id": page_id,
+                        "channel_id": page_id,
                         "fanpage_name": crud.get_page_name_by_id(
                             page_id, ACCESS_TOKEN
                         ),

@@ -327,6 +327,7 @@ def get_all_configs(db: Session):
         result = [
             {
                 "id": r.channel_id,
+                "page_id": db.query(Channel.page_id).filter(Channel.id == r.channel_id).scalar(),
                 "name": json.loads(r.brand_default) if r.brand_default else None
             }
             for r in records
