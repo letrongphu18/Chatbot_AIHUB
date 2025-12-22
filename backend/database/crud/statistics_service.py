@@ -4,8 +4,19 @@ from backend.database.models.lead_data import LeadData
 from backend.database.models.page_config import Channel
 from backend.database.session import SessionLocal
 
-def get_statistics():
+def get_db_instance():
     db = SessionLocal()
+    try:
+        return db
+    except:
+        db.rollback() 
+        raise
+    finally:
+        pass 
+db = get_db_instance()
+
+
+def get_statistics():
     try:
         conversations = count_conversations().get("total_conversations", 0)
         fanpage = db.query(Channel).filter().count()

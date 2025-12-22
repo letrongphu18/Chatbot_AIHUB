@@ -4,9 +4,18 @@ from backend.database.session import SessionLocal
 # =========================
 # CÁC FIELD CUSTOMER CHO PHÉP
 # =========================
+def get_db_instance():
+    db = SessionLocal()
+    try:
+        return db
+    except:
+        db.rollback() 
+        raise
+    finally:
+        pass 
+db = get_db_instance()
 
 def save_lead_to_db(lead_data: dict):
-    db = SessionLocal()
     try:
         phone = lead_data.get("phone")
         lead = db.query(LeadData).filter(LeadData.phone == phone).first()

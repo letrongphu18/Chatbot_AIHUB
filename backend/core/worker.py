@@ -1,5 +1,8 @@
 print("[WORKER] STARTED")
 
+from backend.database.session import SessionLocal
+from sqlalchemy.orm import Session
+
 import os
 import sys
 import datetime
@@ -43,9 +46,8 @@ if not os.getenv("GOOGLE_API_KEY"):
 
 flow_engine = FlowEngine(redis_client)
 
-fb_tokens = crud.load_all_fb_tokens()  # Nhớ kiểm tra bảo mật
-#fb_tokens = load_all_fb_tokens("backend/configs/")  
-fb_client = FacebookClient(page_tokens=fb_tokens)
+# fb_tokens = crud.load_all_fb_tokens()    
+# fb_client = FacebookClient(page_tokens=fb_tokens)
 crm = CRMConnector()
 
 print(" WORKER ĐANG CHẠY... ")
@@ -141,12 +143,15 @@ def update_session(sender_id, page_id, topic, state, new_data=None,
     
 
 def process_message():
+    with SessionLocal() as db:
+        fb_tokens = crud.load_all_fb_tokens(db)
+    fb_client = FacebookClient(page_tokens=fb_tokens)
     while True:
-        db = SessionLocal()
-        try:
-            db.close()
-        except:
-            pass
+        # db = SessionLocal()
+        # try:
+        #     db.close()
+        # except:
+        #     pass
         
         try:
             packed_item = redis_client.blpop("chat_queue", timeout=5)
@@ -164,7 +169,9 @@ def process_message():
                     # 1. Load Config (Topic Pack)
                     #config = load_config(page_id)
                     #config = get_page_config_by_id("backend/configs",page_id)
-                    config = crud.get_config_by_page_id(page_id)
+                    #config = crud.get_config_by_page_id(page_id)
+                    with SessionLocal() as db:
+                        config = crud.get_config_by_page_id(db, page_id)
                     if not config:
                         print("❌ Không tìm thấy Config")
                         continue

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Any, Dict, List
 from backend.auth.api_key_auth import check_api_key
 from backend.database.load_pages_config import PageConfig
-from backend.database.session import SessionLocal
+from backend.database.session import get_db
 from backend.schemas.page_config import PageConfigIn
 # from backend.database.crud import get_all_configs, get_config_by_id, add_config, update_config, delete_config, get_platform_credential
 from backend.database import crud
@@ -17,9 +17,9 @@ router = APIRouter(dependencies=[Depends(check_api_key)])
 # -----------------------------
 
 @router.get("/api/pages")
-def get_pages():
+def get_pages(db: Session = Depends(get_db)):
     try:
-        pages = crud.get_all_configs()
+        pages = crud.get_all_configs(db)
         return pages
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving pages: {str(e)}")
@@ -28,8 +28,8 @@ def get_pages():
 # Lấy chi tiết page theo page_id
 # -----------------------------
 @router.get("/api/page/{channel_id}")
-def get_page_details(channel_id: int):
-    config = crud.get_page_by_id(channel_id)
+def get_page_details(channel_id: int, db: Session = Depends(get_db)):
+    config = crud.get_page_by_id(db, channel_id)
     if not config:
         raise HTTPException(status_code=404, detail="Page config not found")
     return config
@@ -38,8 +38,8 @@ def get_page_details(channel_id: int):
 # Thêm thông tin page
 # -----------------------------
 @router.post("/api/page_add")
-def add_page(payload: dict = Body(...)):
-    success = crud.add_page(payload)
+def add_page(payload: dict = Body(...), db: Session = Depends(get_db)):
+    success = crud.add_page(db, payload)
     if not success:
         raise HTTPException(status_code=400, detail="Page config already exists")
     return {"message": "Page config added"}
@@ -49,8 +49,8 @@ def add_page(payload: dict = Body(...)):
 # Cập nhật thông tin page
 # -----------------------------
 @router.put("/api/page_update/{channel_id}")
-def update_page_config(channel_id: int, payload: Dict[str, Any] = Body(...)):
-    success = crud.update_page(channel_id, payload)
+def update_page_config(channel_id: int, payload: Dict[str, Any] = Body(...), db: Session = Depends(get_db)):
+    success = crud.update_page(db, channel_id, payload)
     if not success:
         raise HTTPException(status_code=404, detail="Page config not found")
     return {"message": "Page config updated", "channel_id": channel_id}
@@ -60,8 +60,8 @@ def update_page_config(channel_id: int, payload: Dict[str, Any] = Body(...)):
 # Xóa thông tin page
 # -----------------------------
 @router.delete("/api/page_delete/{channel_id}")
-def delete_page(channel_id: int):
-    success = crud.delete_page(channel_id)
+def delete_page(channel_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_page(db, channel_id)
     if not success:
         raise HTTPException(status_code=404, detail="Page config not found")
     return {"message": "Page config deleted", "channel_id": channel_id}

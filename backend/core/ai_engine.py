@@ -116,25 +116,66 @@ def generate_ai_response(chat_history, config, session_data_json):
     )
 
   
-    try:
-        model = genai.GenerativeModel(
-            model_name=api_name,
-            system_instruction=MASTER_SYSTEM_PROMPT, # <--- System Prompt Cố định
-            generation_config={"response_mime_type": "application/json"}
-        )
+    # try:
+    #     model = genai.GenerativeModel(
+    #         model_name=api_name,
+    #         system_instruction=MASTER_SYSTEM_PROMPT, # <--- System Prompt Cố định
+    #         generation_config={"response_mime_type": "application/json"}
+    #     )
 
         
-        response = model.generate_content(user_prompt)
-        return json.loads(response.text)
+    #     response = model.generate_content(user_prompt)
+    #     return json.loads(response.text)
         
+    # except Exception as e:
+    #     print(" Lỗi AI Engine:")
+    #     return {
+    #         "reply_text": f" Hệ thống đang bận, anh/chị chờ em lát nha.",
+    #         "next_state": "ERROR",
+    #         "need_phone": False,
+    #         "classification": "unknown",
+    #         "tags": []
+    #     }
+
+   
+
+
+
+    try:
+        available_models = [
+            m.name
+            for m in genai.list_models()
+            if "generateContent" in m.supported_generation_methods
+        ]
+        if not available_models:
+            raise ValueError("Không tìm thấy model khả dụng với key hiện tại.")
     except Exception as e:
-        print(" Lỗi AI Engine:")
+        print("⚠️ Lỗi lấy danh sách model:", e)
         return {
-            "reply_text": f" Hệ thống đang bận, anh/chị chờ em lát nha.",
+            "reply_text": "Hệ thống hiện không khả dụng. Vui lòng thử lại sau.",
             "next_state": "ERROR",
-            "need_phone": False,
-            "classification": "unknown",
-            "tags": []
+            "need_phone": False
         }
 
    
+    for model_name in available_models:
+        try:
+            model = genai.GenerativeModel(
+                model_name=model_name,
+                system_instruction=MASTER_SYSTEM_PROMPT,
+                generation_config={"response_mime_type": "application/json"}
+            )
+            response = model.generate_content(user_prompt)
+            # Trả về ngay khi chạy thành công
+            print(f"✅ Sử dụng model khả dụng: {model_name}")
+            return json.loads(response.text)
+        except Exception as e:
+            print(f"⚠️ Model {model_name} không chạy được, bỏ qua. Lỗi:", e)
+            continue
+
+    # Nếu tất cả model đều lỗi
+    return {
+        "reply_text": "Hệ thống hiện không khả dụng. Vui lòng thử lại sau.",
+        "next_state": "ERROR",
+        "need_phone": False
+    }

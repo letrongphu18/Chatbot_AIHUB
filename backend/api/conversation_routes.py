@@ -5,14 +5,15 @@ from fastapi import Depends
 from backend.auth.api_key_auth import check_api_key
 from backend.database.crud import load_all_fb_tokens
 from backend.database import crud
-from backend.database.session import SessionLocal
+from backend.database.session import get_db
+from sqlalchemy.orm import Session
 router = APIRouter(dependencies=[Depends(check_api_key)])
 
 # Dependency để lấy DB session
 
 @router.get("/api/conversations")
-def get_conversations():
-    PAGE_TOKENS = crud.load_all_fb_tokens()
+def get_conversations(db: Session = Depends(get_db)):
+    PAGE_TOKENS = crud.load_all_fb_tokens(db)
     limit = 100
     conversations_map = {}
 
@@ -124,9 +125,10 @@ def get_conversations():
 def get_conversation_details(
     conversation_id: str,
     page_id: str = Query(..., description="ID fanpage để lấy access_token"),
+    db: Session = Depends(get_db)
 ):
 
-    ACCESS_TOKEN = crud.get_token_by_page_id(page_id)
+    ACCESS_TOKEN = crud.get_token_by_page_id(db,page_id)
     
     if not ACCESS_TOKEN:
         return {"success": False, "error": "Page ID không có token hợp lệ."}

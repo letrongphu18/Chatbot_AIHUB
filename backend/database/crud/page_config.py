@@ -11,17 +11,20 @@ from backend.database.session import SessionLocal
 # -----------------------------
 # Lấy page config theo page_id
 # -----------------------------
-def get_db_instance():
-    db = SessionLocal()
-    try:
-        return db
-    finally:
-        pass 
-db = get_db_instance()
+# def get_db_instance():
+#     db = SessionLocal()
+#     try:
+#         return db
+#     except:
+#         db.rollback() 
+#         raise
+#     finally:
+#         pass 
+# db = get_db_instance()
 
 # -----------------------------
 # Dùng cho train chatbot
-def get_config_by_page_id(page_id: int):
+def get_config_by_page_id(db: Session, page_id: int):
     channel = db.query(Channel).filter(Channel.page_id == page_id).first()
     if not channel:
         return None
@@ -46,11 +49,11 @@ def get_config_by_page_id(page_id: int):
     return config if config else None
 
 
-def get_config_by_channel(channel_id: int):
+def get_config_by_channel(db: Session, channel_id: int):
     cfg = db.query(PageConfig).filter(PageConfig.channel_id == channel_id).first()
     return cfg.to_dict() if cfg else None
 
-def get_channel(channel_id: int): #Tạm thời chưa dùng platform
+def get_channel(db: Session, channel_id: int): #Tạm thời chưa dùng platform
     cred = (
         db.query(Channel)
         .filter(
@@ -61,7 +64,7 @@ def get_channel(channel_id: int): #Tạm thời chưa dùng platform
     return cred.to_dict() if cred else None
 
 # Dùng trong page api để lấy chi tiết page
-def get_page_by_id(channel_id: int):
+def get_page_by_id(db: Session, channel_id: int):
     channel = db.query(Channel).filter(Channel.id == channel_id).first()
     if not channel:
         return None
@@ -101,7 +104,7 @@ def get_page_by_id(channel_id: int):
     return data
 
 # Dùng trong page api để thêm page mới
-def add_page(page: dict):
+def add_page(db: Session, page: dict):
     page_id = page.get("page_id")
     access_token = page.get("access_token")
     if not page_id or not access_token :
@@ -213,7 +216,7 @@ def add_page(page: dict):
 #     return True
 
 
-def update_page(channel_id: int, page: dict ):
+def update_page(db: Session, channel_id: int, page: dict):
     cfg = (
         db.query(PageConfig)
         .filter(PageConfig.channel_id == channel_id)
@@ -282,7 +285,7 @@ def update_page(channel_id: int, page: dict ):
     return True
 
 
-def delete_page(channel_id: int) -> bool:
+def delete_page(db: Session, channel_id: int) -> bool:
     cfg = (
         db.query(PageConfig)
         .filter(
@@ -312,7 +315,7 @@ def delete_page(channel_id: int) -> bool:
     return True
 
 # dùng trong api quản trị danh sách page
-def get_all_configs():
+def get_all_configs(db: Session):
     try:
         records = db.query(
             PageConfig.channel_id,
@@ -351,14 +354,14 @@ def get_page_name_by_id(page_id: int, access_token: str) -> str:
     return page_name
 
 # dùng trong conversation_routes để lấy token theo page_id
-def get_token_by_page_id(page_id: int) -> str:
+def get_token_by_page_id(db: Session,page_id: int) -> str:
     channel = db.query(Channel).filter(Channel.page_id == page_id).first()
     if not channel:
         return None
     return channel.access_token
 
 # dùng trong worker để load tất cả token fb
-def load_all_fb_tokens() -> dict:
+def load_all_fb_tokens(db: Session) -> dict:
     return {
         plf.page_id: plf.access_token
         for plf in db.query(Channel).all()
