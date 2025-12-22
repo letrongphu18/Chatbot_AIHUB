@@ -13,113 +13,114 @@ router = APIRouter(dependencies=[Depends(check_api_key)])
 
 @router.get("/api/conversations")
 def get_conversations(db: Session = Depends(get_db)):
-    PAGE_TOKENS = crud.load_all_fb_tokens(db)
-    limit = 100
-    conversations_map = {}
+    return crud.get_conversations(db)
+    # PAGE_TOKENS = crud.load_all_fb_tokens(db)
+    # limit = 100
+    # conversations_map = {}
 
-    has_success_connection = False   # 👈 flag kiểm tra kết nối thành công
-    errors = []                      # 👈 lưu lỗi nếu cần debug
+    # has_success_connection = False   # 👈 flag kiểm tra kết nối thành công
+    # errors = []                      # 👈 lưu lỗi nếu cần debug
 
-    for page_id, ACCESS_TOKEN in PAGE_TOKENS.items():
-        if not ACCESS_TOKEN:
-            errors.append(f"Page {page_id}: missing access token")
-            continue
+    # for page_id, ACCESS_TOKEN in PAGE_TOKENS.items():
+    #     if not ACCESS_TOKEN:
+    #         errors.append(f"Page {page_id}: missing access token")
+    #         continue
 
-        url = f"https://graph.facebook.com/v17.0/{page_id}/conversations"
-        params = {
-            "access_token": ACCESS_TOKEN,
-            "limit": limit,
-            "fields": (
-                "id,updated_time,link,participants,"
-                "messages.limit(1){message,from,created_time}"
-            )
-        }
+    #     url = f"https://graph.facebook.com/v17.0/{page_id}/conversations"
+    #     params = {
+    #         "access_token": ACCESS_TOKEN,
+    #         "limit": limit,
+    #         "fields": (
+    #             "id,updated_time,link,participants,"
+    #             "messages.limit(1){message,from,created_time}"
+    #         )
+    #     }
 
-        while url:
-            try:
-                res = requests.get(url, params=params, timeout=10)
+    #     while url:
+    #         try:
+    #             res = requests.get(url, params=params, timeout=10)
 
-                if res.status_code != 200:
-                    errors.append(
-                        f"Page {page_id}: HTTP {res.status_code} - {res.text}"
-                    )
-                    break
+    #             if res.status_code != 200:
+    #                 errors.append(
+    #                     f"Page {page_id}: HTTP {res.status_code} - {res.text}"
+    #                 )
+    #                 break
 
-                data = res.json()
+    #             data = res.json()
 
-                # Facebook trả lỗi dạng JSON
-                if "error" in data:
-                    errors.append(
-                        f"Page {page_id}: {data['error'].get('message')}"
-                    )
-                    break
+    #             # Facebook trả lỗi dạng JSON
+    #             if "error" in data:
+    #                 errors.append(
+    #                     f"Page {page_id}: {data['error'].get('message')}"
+    #                 )
+    #                 break
 
-                conversations = data.get("data", [])
+    #             conversations = data.get("data", [])
 
-                # 👉 Có data tức là kết nối OK
-                if conversations:
-                    has_success_connection = True
+    #             # 👉 Có data tức là kết nối OK
+    #             if conversations:
+    #                 has_success_connection = True
 
-                url = data.get("paging", {}).get("next")
-                params = None
+    #             url = data.get("paging", {}).get("next")
+    #             params = None
 
-                for conv in conversations:
-                    conv_id = conv.get("id")
-                    link = conv.get("link", "")
-                    last_msg = conv.get("messages", {}).get("data", [])
+    #             for conv in conversations:
+    #                 conv_id = conv.get("id")
+    #                 link = conv.get("link", "")
+    #                 last_msg = conv.get("messages", {}).get("data", [])
 
-                    if last_msg:
-                        m = last_msg[0]
-                        message = m.get("message", "")
-                        created_time = m.get("created_time", "")
-                        fullname = m.get("from", {}).get("name", "Người dùng")
-                    else:
-                        message = ""
-                        created_time = ""
-                        fullname = "Người dùng"
+    #                 if last_msg:
+    #                     m = last_msg[0]
+    #                     message = m.get("message", "")
+    #                     created_time = m.get("created_time", "")
+    #                     fullname = m.get("from", {}).get("name", "Người dùng")
+    #                 else:
+    #                     message = ""
+    #                     created_time = ""
+    #                     fullname = "Người dùng"
 
-                    try:
-                        dt = datetime.fromisoformat(
-                            created_time.replace("Z", "+00:00")
-                        )
-                    except Exception:
-                        dt = datetime.min
+    #                 try:
+    #                     dt = datetime.fromisoformat(
+    #                         created_time.replace("Z", "+00:00")
+    #                     )
+    #                 except Exception:
+    #                     dt = datetime.min
 
-                    conv_key = f"{page_id}_{conv_id}"
+    #                 conv_key = f"{page_id}_{conv_id}"
 
-                    conversations_map[conv_key] = {
-                        "conversation_id": conv_id,
-                        "page_id": page_id,
-                        "channel_id": page_id,
-                        "fanpage_name": crud.get_page_name_by_id(
-                            page_id, ACCESS_TOKEN
-                        ),
-                        "link": link,
-                        "fullname": fullname,
-                        "customer_name": "",
-                        "phone": "",
-                        "email": "",
-                        "tags": "",
-                        "last_message": message,
-                        "last_message_time": created_time,
-                        "last_message_dt": dt
-                    }
+    #                 conversations_map[conv_key] = {
+    #                     "conversation_id": conv_id,
+    #                     "page_id": page_id,
+    #                     "channel_id": page_id,
+    #                     "fanpage_name": crud.get_page_name_by_id(
+    #                         page_id, ACCESS_TOKEN
+    #                     ),
+    #                     "link": link,
+    #                     "fullname": fullname,
+    #                     "customer_name": "",
+    #                     "phone": "",
+    #                     "email": "",
+    #                     "tags": "",
+    #                     "last_message": message,
+    #                     "last_message_time": created_time,
+    #                     "last_message_dt": dt
+    #                 }
 
-            except Exception as e:
-                errors.append(f"Page {page_id}: exception {str(e)}")
-                break
+    #         except Exception as e:
+    #             errors.append(f"Page {page_id}: exception {str(e)}")
+    #             break
 
-    all_conversations = list(conversations_map.values())
-    all_conversations.sort(
-        key=lambda x: x["last_message_dt"], reverse=True
-    )
+    # all_conversations = list(conversations_map.values())
+    # all_conversations.sort(
+    #     key=lambda x: x["last_message_dt"], reverse=True
+    # )
 
-    return {
-        "success": has_success_connection,   
-        "conversations": all_conversations,
-        "error_count": len(errors),
-        "errors": errors                  
-    }
+    # return {
+    #     "success": has_success_connection,   
+    #     "conversations": all_conversations,
+    #     "error_count": len(errors),
+    #     "errors": errors                  
+    # }
 
 
 @router.get("/api/conversation/{conversation_id}")

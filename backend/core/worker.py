@@ -141,8 +141,6 @@ def update_session(sender_id, page_id, topic, state, new_data=None,
     redis_client.expire(key, 86400 * 3) # 
 
 
-    
-
 def process_message():
     print(" Worker: Bắt đầu xử lý tin nhắn từ chat_queue...")
     with SessionLocal() as db:
