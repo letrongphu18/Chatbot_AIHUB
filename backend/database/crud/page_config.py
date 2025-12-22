@@ -3,7 +3,7 @@ from logging import config
 import requests
 from sqlalchemy.orm import Session
 from backend.database.models.page_config import Channel, PageConfig
-from sqlalchemy import cast, String
+from sqlalchemy import cast, String, desc
 import json
 
 from backend.database.session import SessionLocal
@@ -317,10 +317,11 @@ def delete_page(db: Session, channel_id: int) -> bool:
 # dùng trong api quản trị danh sách page
 def get_all_configs(db: Session):
     try:
+        
         records = db.query(
             PageConfig.channel_id,
             cast(PageConfig.config_json["meta_data"]["brand_default"], String).label("brand_default")
-        ).all()
+        ).order_by(desc(PageConfig.created_at)).all()
 
         # Dùng list comprehension để parse JSON một lần
         result = [
