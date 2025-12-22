@@ -1,18 +1,19 @@
 print("[WORKER] STARTED")
 
+import os
+import sys
+
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.insert(0, BASE_DIR)
+
 from backend.database.session import SessionLocal
 from sqlalchemy.orm import Session
 
-import os
-import sys
+# sys.path.insert(0, os.path.abspath("."))
+# sys.path.append(os.getcwd())
 import datetime
 import time
-sys.path.insert(0, os.path.abspath("."))
-
-from backend.database.session import SessionLocal 
-
-sys.path.append(os.getcwd())
-
 import redis
 import json
 from dotenv import load_dotenv
@@ -143,6 +144,7 @@ def update_session(sender_id, page_id, topic, state, new_data=None,
     
 
 def process_message():
+    print(" Worker: Bắt đầu xử lý tin nhắn từ chat_queue...")
     with SessionLocal() as db:
         fb_tokens = crud.load_all_fb_tokens(db)
     fb_client = FacebookClient(page_tokens=fb_tokens)

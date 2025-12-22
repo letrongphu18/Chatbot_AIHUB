@@ -56,21 +56,22 @@ async def is_endpoint_alive(url: str, timeout: float = 1.0) -> bool:
 @router.post("/webhook")
 async def handle_webhook(request: Request):
     try:
+        print("🌟 Đã nhận webhook từ Facebook")
         body = await request.json()
         r.rpush("chat_queue", json.dumps(body))
-        if ASP_CORE_URL:
-            alive = await is_endpoint_alive(ASP_CORE_URL)
-            if alive:
-                try:
-                    async with httpx.AsyncClient(
-                        timeout=3,
-                        verify=False
-                    ) as client:
-                        await client.post(ASP_CORE_URL, json=body)
-                except Exception as e:
-                    print("⚠️ ASP.NET Core gọi thất bại, bỏ qua:", e)
-            else:
-                print("⚠️ ASP.NET Core không hoạt động, skip gọi")
+        # if ASP_CORE_URL:
+        #     alive = await is_endpoint_alive(ASP_CORE_URL)
+        #     if alive:
+        #         try:
+        #             async with httpx.AsyncClient(
+        #                 timeout=3,
+        #                 verify=False
+        #             ) as client:
+        #                 await client.post(ASP_CORE_URL, json=body)
+        #         except Exception as e:
+        #             print("⚠️ ASP.NET Core gọi thất bại, bỏ qua:", e)
+        #     else:
+        #         print("⚠️ ASP.NET Core không hoạt động, skip gọi")
 
         # async with httpx.AsyncClient(verify=False) as client:
         #     try:

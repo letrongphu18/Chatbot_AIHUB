@@ -146,6 +146,9 @@ def get_conversation_details(
         res = requests.get(url, params=params, timeout=10)
         data = res.json()
         msgs = data.get("messages", {}).get("data", [])
+        for msg in msgs:
+            from_id = msg.get("from", {}).get("id")
+            msg["sender"] = "fanpage" if from_id == page_id else "user"
         all_messages.extend(msgs)
 
         # Kiểm tra next page
