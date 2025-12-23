@@ -1,50 +1,89 @@
 from backend.database.models.lead_data import LeadData
+from backend.core.schemas import LeadData as LeadDataSchema
+import requests
+from sqlalchemy.orm import Session
 from backend.database.session import SessionLocal
-
 # =========================
 # CÁC FIELD CUSTOMER CHO PHÉP
 # =========================
-def get_db_instance():
-    db = SessionLocal()
-    try:
-        return db
-    except:
-        db.rollback() 
-        raise
-    finally:
-        pass 
-db = get_db_instance()
 
-def save_lead_to_db(lead_data: dict):
+def apply_lead_schema(lead: LeadData, s: LeadDataSchema):
+    if s.phone is not None:
+        lead.phone = s.phone
+
+    if s.email is not None:
+        lead.email = s.email
+
+    if s.full_name:
+        lead.full_name = s.full_name
+
+    if s.facebook_uid:
+        lead.facebook_uid = s.facebook_uid
+
+    if s.page_id:
+        lead.page_id = s.page_id
+
+    if s.profile_link:
+        lead.profile_link = s.profile_link
+
+    if s.topic:
+        lead.topic = s.topic
+
+    if s.subtopic:
+        lead.subtopic = s.subtopic
+
+    if s.intent:
+        lead.intent = s.intent
+
+    if s.classification:
+        lead.classification = s.classification
+
+    if s.stage:
+        lead.stage = s.stage
+
+    if s.tags:
+        lead.tags = s.tags
+
+    if s.score is not None:
+        lead.score = s.score
+
+    if s.lead_source:
+        lead.lead_source = s.lead_source
+
+    if s.source_page:
+        lead.source_page = s.source_page
+
+    if s.channel:
+        lead.channel = s.channel
+
+    if s.notes:
+        lead.notes = s.notes
+
+def save_lead_to_db(db: Session,lead_data: dict):
     try:
         phone = lead_data.get("phone")
-        lead = db.query(LeadData).filter(LeadData.phone == phone).first()
-        is_new = False
-        if not lead:
-            lead = LeadData(phone=phone)
-            db.add(lead)
-            is_new = True
-        
-        # ===== GÁN FIELD RÕ RÀNG =====
-        lead.full_name   = lead_data.get("full_name", lead.full_name)
-        lead.email       = lead_data.get("email", lead.email)
-        lead.page_id     = lead_data.get("page_id", lead.page_id)
-        lead.facebook_uid= lead_data.get("facebook_uid", lead.facebook_uid)
-        lead.profile_link= lead_data.get("profile_link", lead.profile_link)
-        lead.topic       = lead_data.get("topic", lead.topic)
-        lead.subtopic    = lead_data.get("subtopic", lead.subtopic)
-        lead.tags        = lead_data.get("tags", lead.tags)
-        lead.intent      = lead_data.get("intent", lead.intent)
-        lead.classification= lead_data.get("classification", lead.classification)
-        lead.data_raw    = lead_data.get("data_raw", lead.data_raw)
-        lead.score       = lead_data.get("score", lead.score)
-        lead.lead_source = lead_data.get("lead_source", lead.lead_source)
-        lead.source_page = lead_data.get("source_page", lead.source_page)
-        lead.channel     = lead_data.get("channel", lead.channel)
-        lead.page_id     = lead_data.get("page_id", lead.page_id)
-        lead.conversation_id= lead_data.get("conversation_id", lead.conversation_id)
-        lead.notes       = lead_data.get("notes", lead.notes)
+        email = lead_data.get("email")
+        facebook_uid = lead_data.get("facebook_uid")
+        page_id = lead_data.get("page_id")
+        # 1. Ưu tiên identity theo channel
+        lead = db.query(LeadData).filter(
+            LeadData.facebook_uid == facebook_uid,
+            LeadData.page_id == page_id
+        ).first()
 
+        # 2. Nếu chưa có lead channel → thử merge global
+        if not lead and phone:
+            lead = db.query(LeadData).filter(LeadData.phone == phone).first()
+
+        if not lead and email:
+            lead = db.query(LeadData).filter(LeadData.email == email).first()
+        
+        if not lead:
+            #lead = LeadData(phone=phone)
+            lead = LeadData()
+            db.add(lead)
+        apply_lead_schema(lead, LeadDataSchema(**lead_data))
+        
         db.commit()
         db.refresh(lead)
         return lead.id
@@ -55,6 +94,21 @@ def save_lead_to_db(lead_data: dict):
 
     # finally:
     #     db.close()
+
+def get_leads_by_facebook_uid(db: Session, facebook_uid: str, page_id: str):
+    try:
+        lead = db.query(LeadData).filter(
+            LeadData.facebook_uid == facebook_uid,
+            LeadData.page_id == page_id
+        ).order_by(LeadData.id.desc()).first()
+        if lead:
+            return lead
+        return LeadData()
+    except Exception as e:
+        print("❌ LỖI LẤY LEAD THEO FACEBOOK UID:", repr(e))
+        raise
+
+
 
 def get_lead_by_phone(phone: str):
     db = SessionLocal()

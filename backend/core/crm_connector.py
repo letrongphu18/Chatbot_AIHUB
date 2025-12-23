@@ -6,7 +6,7 @@ import redis
 from backend.core.redis_client import r
 from backend.database.crud.lead_service import save_lead_to_db
 from backend.core.redis_client import r
-
+from sqlalchemy.orm import Session
 # Cấu hình Charm.Contact (Sau này thay bằng URL thật giờ tui làm mock thôi)
 # CHARM_API_URL = os.getenv("CHARM_API_URL", "http://127.0.0.1:8000/mock-crm/leads")
 # CHARM_API_KEY = os.getenv("CHARM_API_KEY", "mock-key")
@@ -16,7 +16,7 @@ class CRMConnector:
     #     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     #     self.redis = redis.from_url(redis_url)
 
-    def push_lead(self, lead_data: dict):
+    def push_lead(self,  db: Session, lead_data: dict):
         """
         Quy trình chuẩn:
         1. Check xem khách có chưa (Deduplication).
@@ -32,7 +32,7 @@ class CRMConnector:
         # print(f"💾 Lưu lead vào DB: {phone}...")
         print(lead_data)
         try:
-            deal_id = save_lead_to_db(lead_data)
+            deal_id = save_lead_to_db(db,lead_data)
             print(f"💾 Lưu lead vào DB... {deal_id}")
             return True
             # headers = {

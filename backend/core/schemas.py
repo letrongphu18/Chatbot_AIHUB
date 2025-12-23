@@ -21,7 +21,7 @@ class LeadData(BaseModel):
     tags: List[str] = []    
     intent: str = ""        
     classification: str = "" 
-    
+    stage: str = ""
     # 3. Nguồn & Kênh
     lead_source: str = "facebook_chatbot"
     source_page: str        

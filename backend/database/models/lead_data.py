@@ -25,7 +25,7 @@ class LeadData(Base):
     tags = Column(JSON, nullable=True)
     intent = Column(String(255), nullable=True)
     classification = Column(String(255), nullable=True)
-
+    stage = Column(String(50), nullable=True)
     # 3. Nguồn & Kênh
     lead_source = Column(String(255), nullable=True)
     source_page = Column(String(255), nullable=True)
@@ -41,3 +41,4 @@ class LeadData(Base):
 
     def to_dict(self):
         return self.__dict__
+

@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 
 #from backend.configs.config_loader import load_config
 from backend.core.ai_engine import generate_ai_response
-from backend.core.flow_engine import FlowEngine
+from backend.core._flow_engine import FlowEngine
 from backend.core.fb_helper import FacebookClient
 from backend.core.crm_connector import CRMConnector
 from backend.database import crud
@@ -273,8 +273,9 @@ def process_message():
                         if final_result["action"] == "PUSH_CRM":
                             print(f" DATA LEAD -> CRM...")
                             lead_data["page_id"] = page_id
-                            crm.push_lead(lead_data)
-                    
+                            with SessionLocal() as db:
+                                crm.push_lead(db,lead_data)
+                            
                    
 
         except Exception as e:

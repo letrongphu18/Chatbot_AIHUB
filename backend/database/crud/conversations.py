@@ -93,7 +93,7 @@ def get_conversations(db: Session):
                         dt = datetime.min
 
                     conv_key = f"{page_id}_{conv_id}"
-
+                    lead_conv = crud.get_leads_by_facebook_uid(db, sender_id, page_id)
                     conversations_map[conv_key] = {
                         "conversation_id": conv_id,
                         "page_id": page_id,
@@ -111,11 +111,9 @@ def get_conversations(db: Session):
 
                         # CRM placeholders
                         "customer_name": fullname,
-                        "phone": get_phone_by_facebook_uid(
-                            db, sender_id, page_id),
-                        "email": get_email_by_facebook_uid(
-                            db, sender_id, page_id),
-                        "tags": "",
+                        "phone": lead_conv.phone,
+                        "email": lead_conv.email,
+                        "tags": lead_conv.stage,
                         "last_message": message,
                         "last_message_time": created_time,
                         "last_message_dt": dt
@@ -137,21 +135,22 @@ def get_conversations(db: Session):
         "errors": errors
     }
 
-def get_phone_by_facebook_uid(db: Session, facebook_uid: str, page_id: str):
-    try:
-        # Lấy số điện thoại cuối cùng từ lead có facebook_uid và page_id tương ứng
-        lead = db.query(LeadData).filter(
-            LeadData.facebook_uid == facebook_uid,  
-            LeadData.page_id == page_id,
-            LeadData.phone != None
-        ).order_by(LeadData.id.desc()).first()
-        if lead:
-            return lead.phone
-        return None
-    except Exception as e:
-        print("❌ LỖI LẤY SỐ ĐIỆN THOẠI THEO FACEBOOK UID:", repr(e))
-        raise
-def get_email_by_facebook_uid(db: Session, facebook_uid: str, page_id: str):
+
+# def get_phone_by_facebook_uid(db: Session, facebook_uid: str, page_id: str):
+#     try:
+#         # Lấy số điện thoại cuối cùng từ lead có facebook_uid và page_id tương ứng
+#         lead = db.query(LeadData).filter(
+#             LeadData.facebook_uid == facebook_uid,  
+#             LeadData.page_id == page_id,
+#             LeadData.phone != None
+#         ).order_by(LeadData.id.desc()).first()
+#         if lead:
+#             return lead.phone
+#         return None
+#     except Exception as e:
+#         print("❌ LỖI LẤY SỐ ĐIỆN THOẠI THEO FACEBOOK UID:", repr(e))
+#         raise
+# def get_email_by_facebook_uid(db: Session, facebook_uid: str, page_id: str):
     try:
         # Lấy email cuối cùng từ lead có facebook_uid và page_id tương ứng
         lead = db.query(LeadData).filter(

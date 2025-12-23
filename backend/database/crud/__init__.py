@@ -1,7 +1,5 @@
 from .conversations import (
     get_conversations,  
-    get_phone_by_facebook_uid,
-    get_email_by_facebook_uid,
 )
 from .page_config import (
     get_page_by_id,
@@ -19,6 +17,7 @@ from .page_config import (
 
 from .lead_service import (
     save_lead_to_db,
+    get_leads_by_facebook_uid,
     get_lead_by_phone,
     get_lead_by_id,
     get_all_leads,
