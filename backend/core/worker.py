@@ -1,3 +1,4 @@
+#backend/core/worker.py
 print("[WORKER] STARTED")
 
 import os
@@ -10,17 +11,14 @@ sys.path.insert(0, BASE_DIR)
 from backend.database.session import SessionLocal
 from sqlalchemy.orm import Session
 
-# sys.path.insert(0, os.path.abspath("."))
-# sys.path.append(os.getcwd())
 import datetime
 import time
 import redis
 import json
 from dotenv import load_dotenv
 
-#from backend.configs.config_loader import load_config
 from backend.core.ai_engine import generate_ai_response
-from backend.core._flow_engine import FlowEngine
+from backend.core.flow_engine import FlowEngine
 from backend.core.fb_helper import FacebookClient
 from backend.core.crm_connector import CRMConnector
 from backend.database import crud
@@ -47,12 +45,9 @@ if not os.getenv("GOOGLE_API_KEY"):
 
 flow_engine = FlowEngine(redis_client)
 
-# fb_tokens = crud.load_all_fb_tokens()    
-# fb_client = FacebookClient(page_tokens=fb_tokens)
 crm = CRMConnector()
 
 print(" WORKER ĐANG CHẠY... ")
-
 
 def get_chat_history(sender_id):
     """Lấy lịch sử chat (Short-term memory)"""
@@ -147,12 +142,6 @@ def process_message():
         fb_tokens = crud.load_all_fb_tokens(db)
     fb_client = FacebookClient(page_tokens=fb_tokens)
     while True:
-        # db = SessionLocal()
-        # try:
-        #     db.close()
-        # except:
-        #     pass
-        
         try:
             packed_item = redis_client.blpop("chat_queue", timeout=5)
             if not packed_item: continue 
@@ -166,20 +155,11 @@ def process_message():
                     message_text = messaging.get("message", {}).get("text")
                     if not message_text: continue
 
-                    # 1. Load Config (Topic Pack)
-                    #config = load_config(page_id)
-                    #config = get_page_config_by_id("backend/configs",page_id)
-                    #config = crud.get_config_by_page_id(page_id)
                     with SessionLocal() as db:
                         config = crud.get_config_by_page_id(db, page_id)
                     if not config:
                         print("❌ Không tìm thấy Config")
                         continue
-                    
-                    page_name = config.get("page_name")
-                    if not page_name:
-                        page_name = config.get("meta_data", {}).get("brand_default", "Unknown")
-                    config["page_name"] = page_name
                     topic_id = config.get("topic_id", "general")
 
                     # 2. LOAD SESSION & HISTORY
@@ -252,7 +232,6 @@ def process_message():
                         if lead_data.get("subtopic"):
                             new_data_points["subtopic"] = lead_data.get("subtopic")
                         
-                        
                         update_session(
                             sender_id=sender_id,
                             page_id=page_id,
@@ -262,7 +241,6 @@ def process_message():
                             conversation_mode=mode,
                             last_human_activity=current_time
                         )
-
                    
                         print(f" Trả lời: {list(fb_tokens.keys())}...")
                         fb_client.send_text_message(sender_id, reply_text, page_id=page_id)

@@ -1,4 +1,4 @@
-# app/ai_engine.py
+#backend/core/ai_engine.py
 import google.generativeai as genai
 import os
 import json

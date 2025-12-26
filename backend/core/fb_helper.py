@@ -10,13 +10,7 @@ class FacebookClient:
         if page_tokens:
             self.page_tokens  = page_tokens
         else:
-            #env_tokens = os.getenv("FB_PAGE_ACCESS_TOKEN", "{}")
             self.page_tokens = {}
-            # try:
-            #     self.page_tokens  = json.loads(env_tokens)
-            # except json.JSONDecodeError:
-            #     self.page_tokens  = {}
-        #self.page_access_token = os.getenv("FB_PAGE_ACCESS_TOKEN")
         self.api_url = "https://graph.facebook.com/v18.0/me/messages"
 
     def send_text_message(self, recipient_id, text, page_id=None):

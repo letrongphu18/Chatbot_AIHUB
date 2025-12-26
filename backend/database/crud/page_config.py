@@ -46,6 +46,7 @@ def get_config_by_page_id(db: Session, page_id: int):
     config["topic_id"] = cfg.topic_id
     config["config_version"] = cfg.config_version
     config["page_id"] = channel.page_id
+    config["page_name"] = config.get("meta_data", {}).get("brand_default", "Unknown")
     return config if config else None
 
 

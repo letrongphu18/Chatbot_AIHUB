@@ -1,35 +1,70 @@
 
+#backend/core/flow_engine.py
 import re
 import json
+from backend.core.intelligence.stage_engine import determine_stage
 from backend.core.schemas import LeadData
+from backend.core.intelligence.lead_enum import (
+    LeadStage,
+    LeadClassification
+)
+
+CLASSIFICATION_SCORE_MAP = {
+    LeadClassification.NGHIEN_NANG: 15,
+    LeadClassification.VIP: 20,
+    LeadClassification.STRESS: 10,
+}
+
+STAGE_SCORE_MAP = {
+    LeadStage.HOT: 20,
+    LeadStage.WARM: 10,
+    LeadStage.QUALIFIED: 5,
+}
 
 
 class FlowEngine:
     def __init__(self, redis_client):
         self.redis = redis_client
 
-    def calculate_score(self, phone, email, stage, classification):
+    def _parse_stage(self, stage_str):
+        if not stage_str:
+            return None
+        for stage in LeadStage:
+            if stage.code == stage_str.upper():
+                return stage
+        return None
+
+
+    def _parse_classification(self, classification_str):
+        if not classification_str:
+            return []
+        classification_str = classification_str.lower()
+        matched = []
+        for cls in LeadClassification:
+            if cls.code in classification_str:
+                matched.append(cls)
+        return matched
+
+
+    def calculate_score(self, phone, email, stage_enum, classification):
         """
         Hàm chấm điểm Lead (Lead Scoring Algorithm)
         Thang điểm: 0 - 100
         """
         score = 10 
-        
     
         if phone or email: 
             score += 50
-        
-        # này là điểm phân loại khách hàng
-        classification = (classification or "").lower()
-        if "nghien_nang" in classification: score += 15  
-        if "vip" in classification: score += 20          
-        if "stress" in classification: score += 10       
-    
-        stage = (stage or "").upper()
-        if stage == "HOT": score += 20
-        elif stage == "WARM": score += 10
-        elif stage == "QUALIFIED": score += 5
-        
+
+        # === Classification score ===
+        classification_enums = self._parse_classification(classification)
+        for cls in classification_enums:
+            score += CLASSIFICATION_SCORE_MAP.get(cls, 0)
+
+        # === Stage score ===
+        #stage_enum = self._parse_stage(stage)
+        if stage_enum:
+            score += STAGE_SCORE_MAP.get(stage_enum, 0)    
       
         return min(score, 100)
 
@@ -56,30 +91,27 @@ class FlowEngine:
     #    này là tìm số điện thoại
         phone = self.extract_phone_number(message_text)
         email = self.extract_email(message_text)
-        
        
         if not phone and detected_info: 
             phone = detected_info.get("phone")
         if not email and detected_info:
             email = detected_info.get("email")
 
-       
-        stage = "NEW"
-        
-    
-        if classification and classification.lower() != "unknown":
-            stage = "QUALIFIED"
-        if "warm" in classification.lower() or "muon_mua" in intent.lower():
-            stage = "WARM"
-        if phone or email:
-            stage = "HOT"
-
-        # này là tính điểm Score sau khi đã có Stage
-        lead_score = self.calculate_score(phone, email, stage, classification)
-
+        stage_enum = determine_stage(phone, email, classification, intent)
+        stage_code = stage_enum.code if stage_enum else None
+        lead_score = self.calculate_score(phone, email, stage_enum, classification)
        
         ai_notes = analysis.get('customer_behavior_notes', '')
-        full_notes = f"[AI]: {ai_notes} | Stage: {stage} | Class: {classification}"
+
+        class_enums = self._parse_classification(classification)
+        stage_desc = stage_enum.description if stage_enum else "Chưa phân loại"
+        class_desc = ", ".join([c.description for c in class_enums]) or "Chưa rõ"
+
+        full_notes = (
+            f"[AI]: {ai_notes} | "
+            f"Stage: {stage_desc} | "
+            f"Classification: {class_desc}"
+        )
 
         lead = LeadData(
             full_name=f"User {sender_id}",
@@ -94,7 +126,7 @@ class FlowEngine:
             tags=tags,
             intent=intent,
             classification=classification,
-            stage=stage,
+            stage=stage_code,
             # Nguồn
             lead_source="facebook_chatbot",
             source_page=config.get("page_name", "Unknown Page"),
@@ -108,10 +140,8 @@ class FlowEngine:
             notes=full_notes
            
         )
-
        
         action_signal = "REPLY"
-        
        
         if phone or email:
             action_signal = "PUSH_CRM"
@@ -125,13 +155,11 @@ class FlowEngine:
         else:
             # Còn lại: Chỉ chat, không làm phiền CRM
             print(f" Đang dẫn dắt... (Chưa có SĐT -> Không đẩy CRM)")
-
         
         if self.redis:
             
             if next_state and next_state != "DEFAULT":
                 self.redis.hset(f"session:{sender_id}", "current_state", next_state)
-            
           
             for tag in tags:
                 self.redis.rpush(f"tags:{sender_id}", tag)

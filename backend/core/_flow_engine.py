@@ -38,17 +38,14 @@ class FlowEngine:
         Điều phối dữ liệu từ AI sang CRM
         """
         reply_text = ai_json.get("reply_text") or ai_json.get("reply_to_user") or "..."
-        
      
         analysis = ai_json.get("analysis") or {}
         detected_info = ai_json.get("detected_info") or {}
         tags = ai_json.get("tags") or []
-        
   
         classification = ai_json.get("classification") or ""
         need_phone = ai_json.get("need_phone", False)
         next_state = ai_json.get("next_state") or "DEFAULT"
-        
       
         sub_topic = analysis.get("sub_topic") or ""
         intent = ai_json.get("intent") or sub_topic or "general_inquiry"
@@ -56,16 +53,13 @@ class FlowEngine:
     #    này là tìm số điện thoại
         phone = self.extract_phone_number(message_text)
         email = self.extract_email(message_text)
-        
        
         if not phone and detected_info: 
             phone = detected_info.get("phone")
         if not email and detected_info:
             email = detected_info.get("email")
-
        
         stage = "NEW"
-        
     
         if classification and classification.lower() != "unknown":
             stage = "QUALIFIED"

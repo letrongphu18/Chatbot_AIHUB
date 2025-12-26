@@ -1,4 +1,4 @@
-# app/crm_connector.py
+#backend/core/crm_connector.py
 import requests
 import json
 import os
@@ -24,12 +24,7 @@ class CRMConnector:
         3. Nếu có rồi -> Cập nhật (Update).
         4. Nếu lỗi -> Đẩy vào Queue Retry.
         """
-        # phone = lead_data.get("phone")
-        # if not phone:
-        #     print("⚠️ Không có số điện thoại, bỏ qua lưu Lead")
-        #     return False
 
-        # print(f"💾 Lưu lead vào DB: {phone}...")
         print(lead_data)
         try:
             deal_id = save_lead_to_db(db,lead_data)
