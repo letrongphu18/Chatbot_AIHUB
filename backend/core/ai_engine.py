@@ -66,6 +66,7 @@ Yêu cầu:
 2. Giữ câu trả lời từ 1–4 câu, thân thiện, rõ ràng, không lan man.
 3. Dựa trên flow_state + session_data + user_message để:
    - Xác định bước tiếp theo (next_state) trong hành trình.
+   - Xác định intent chính của khách (intent)
    - Nếu phù hợp, gợi ý xin số điện thoại (need_phone = true/false).
    - Phân loại khách (classification) theo topic hiện tại.
    - Gợi ý danh sách tags (tags[]) để hệ thống CRM gắn vào lead.
@@ -73,6 +74,7 @@ Yêu cầu:
 4. Trả về đúng **cấu trúc JSON sau**, không thêm chữ ngoài JSON:
 {{
     "reply_text": "Câu trả lời gửi cho khách...",
+    "intent": "mô_tả_ngắn_intent_chính (ví dụ: hoi_gia, tim_hieu_dich_vu, tu_van_ca_nhan)",
     "next_state": "tên_state_tiếp_theo_hoặc_giữ_nguyên",
     "need_phone": true hoặc false,
     "classification": "chuỗi_mô_tả_phân_loại_khách (ví dụ: 'nghien_trung_binh')",
